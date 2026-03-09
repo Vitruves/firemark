@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::cli::args::FontWeight;
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
@@ -91,7 +93,9 @@ impl WatermarkRenderer for StencilRenderer {
         );
 
         // Smaller repetitions at top third and bottom third.
-        let small_scale = main_scale * 0.45;
+        let mut rng = rand::thread_rng();
+        // Randomize scale ratio: 0.45 → [0.40, 0.50]
+        let small_scale = main_scale * rng.gen_range(0.40..0.50);
         let small_spacing = final_spacing * 0.45;
         let small_widths: Vec<f32> = text
             .chars()
@@ -104,9 +108,9 @@ impl WatermarkRenderer for StencilRenderer {
         let small_total_w: f32 =
             small_widths.iter().sum::<f32>() + small_spacing * (char_count - 1.0).max(0.0);
 
-        // Top third
+        // Top third — randomize vertical position: 0.18 → [0.15, 0.21]
         let top_x = cx_offset + (width as f32 - small_total_w) / 2.0;
-        let top_y = cy_offset + height as f32 * 0.18 - small_th / 2.0;
+        let top_y = cy_offset + height as f32 * rng.gen_range(0.15..0.21) - small_th / 2.0;
         draw_stencil_line(
             &mut work,
             &font,
@@ -119,8 +123,8 @@ impl WatermarkRenderer for StencilRenderer {
             rgba,
         );
 
-        // Bottom third
-        let bot_y = cy_offset + height as f32 * 0.82 - small_th / 2.0;
+        // Bottom third — randomize vertical position: 0.82 → [0.79, 0.85]
+        let bot_y = cy_offset + height as f32 * rng.gen_range(0.79..0.85) - small_th / 2.0;
         draw_stencil_line(
             &mut work,
             &font,
@@ -257,11 +261,14 @@ fn draw_stencil_line(
         (0.0, 1.0),
     ];
 
+    let mut rng = rand::thread_rng();
     for &(ox, oy) in offsets {
         let mut cx = start_x + ox;
         for (i, ch) in text.chars().enumerate() {
             let s = ch.to_string();
-            canvas.draw_text(font, &s, cx, y + oy, scale, color);
+            // Per-character y-drop: ±2px
+            let char_dy: f32 = rng.gen_range(-2.0..2.0);
+            canvas.draw_text(font, &s, cx, y + oy + char_dy, scale, color);
             cx += char_widths[i] + spacing;
         }
     }

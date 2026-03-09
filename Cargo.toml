@@ -1,6 +1,6 @@
 [package]
 name = "firemark"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Stop sending naked documents. Fast watermarking CLI for images and PDFs."
 license = "MIT"
@@ -38,3 +38,5 @@ log = "0.4"
 colored = "3"
 rand = "0.8"
 flate2 = "1"
+ureq = { version = "2", features = ["json"] }
+serde_json = "1"

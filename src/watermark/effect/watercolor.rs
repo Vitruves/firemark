@@ -72,11 +72,15 @@ impl WatermarkRenderer for WatercolorRenderer {
             let draw_th = if use_secondary { sth } else { th };
 
             for col in -1..cols {
-                // Random brightness variation: +-10%.
+                // Random brightness variation: +-10% + hue jitter per tile
                 let brightness: f32 = rng.gen_range(-0.10..0.10);
-                let r = (base_color[0] as f32 * (1.0 + brightness)).clamp(0.0, 255.0) as u8;
-                let g = (base_color[1] as f32 * (1.0 + brightness)).clamp(0.0, 255.0) as u8;
-                let b = (base_color[2] as f32 * (1.0 + brightness)).clamp(0.0, 255.0) as u8;
+                // Hue jitter: slight independent variation per channel
+                let hue_r: f32 = rng.gen_range(-0.03..0.03);
+                let hue_g: f32 = rng.gen_range(-0.03..0.03);
+                let hue_b: f32 = rng.gen_range(-0.03..0.03);
+                let r = (base_color[0] as f32 * (1.0 + brightness + hue_r)).clamp(0.0, 255.0) as u8;
+                let g = (base_color[1] as f32 * (1.0 + brightness + hue_g)).clamp(0.0, 255.0) as u8;
+                let b = (base_color[2] as f32 * (1.0 + brightness + hue_b)).clamp(0.0, 255.0) as u8;
                 let tile_color = with_opacity([r, g, b, 255], base_opacity);
                 let rgba = to_rgba(tile_color);
 
@@ -90,8 +94,8 @@ impl WatermarkRenderer for WatercolorRenderer {
         let rotated = rotate_canvas(&work, config.rotation);
 
         // Apply Gaussian blur for soft watercolour edges.
-        // Sigma is 15-25% of font scale, clamped to a reasonable range.
-        let sigma = (scale * 0.12).clamp(1.0, 15.0);
+        // Randomize blur sigma: [0.08, 0.18] of scale instead of fixed 0.12
+        let sigma = (scale * rng.gen_range(0.08..0.18)).clamp(1.0, 15.0);
         let blurred = imageproc::filter::gaussian_blur_f32(rotated.image(), sigma);
         let blurred_canvas = Canvas::from_image(blurred);
 

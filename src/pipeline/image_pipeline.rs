@@ -87,10 +87,18 @@ pub fn process_image(config: &WatermarkConfig, _args: &CliArgs) -> anyhow::Resul
     }
 
     // 5. Apply opacity to the watermark canvas.
-    let wm_image = apply_opacity(wm_canvas.into_image(), config.opacity);
+    let mut wm_image = apply_opacity(wm_canvas.into_image(), config.opacity);
+
+    // 5b. Apply universal perturbation for AI-removal hardening.
+    crate::watermark::perturb::perturb(&mut wm_image);
 
     // 6. Composite the watermark onto the base image.
     composite(&mut base, &wm_image, config);
+
+    // 6b. Apply anti-AI adversarial prompt injection.
+    if config.anti_ai {
+        crate::watermark::anti_ai::apply_anti_ai(&mut base, config.color);
+    }
 
     // 7. Save the result — use output extension when available, else input.
     let format = detect_format(&output_path).or_else(|_| detect_format(input))?;

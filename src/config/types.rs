@@ -63,6 +63,7 @@ pub struct WatermarkConfig {
     pub invert: bool,
     pub grayscale: bool,
     pub filigrane: FiligraneStyle,
+    pub anti_ai: bool,
 
     // ── PDF-specific ──
     #[serde(skip, default)]
@@ -133,6 +134,7 @@ impl Default for WatermarkConfig {
             invert: false,
             grayscale: false,
             filigrane: FiligraneStyle::Guilloche,
+            anti_ai: true,
 
             pages: PageRange::All,
             skip_pages: None,

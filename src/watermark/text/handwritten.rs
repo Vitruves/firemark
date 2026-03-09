@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::cli::args::Position;
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
@@ -56,10 +58,13 @@ impl WatermarkRenderer for HandwrittenRenderer {
         let text_x = pad as f32 + flourish_w as f32;
         let text_y = pad as f32;
 
+        let mut rng = rand::thread_rng();
+
         // --- Flourish mark at the start (a small "x" / cross) ---
         let fl_cx = pad as f32 + flourish_w as f32 * 0.4;
         let fl_cy = text_y + th * 0.5;
-        let fl_r = (scale * 0.12).max(4.0);
+        // Random flourish stroke lengths: ±15%
+        let fl_r = (scale * 0.12).max(4.0) * rng.gen_range(0.85..1.15);
         let fl_color = with_opacity(config.color, config.opacity * 0.7);
         let fl_rgba = to_rgba(fl_color);
         comp.draw_thick_line(
@@ -79,8 +84,17 @@ impl WatermarkRenderer for HandwrittenRenderer {
             fl_rgba,
         );
 
-        // --- Main text ---
-        comp.draw_text(&font, &text, text_x, text_y, scale, rgba);
+        // --- Main text with per-character baseline wobble ---
+        {
+            let mut cx = text_x;
+            for ch in text.chars() {
+                let s = ch.to_string();
+                let (cw, _) = measure_text(&font, &s, scale);
+                let dy: f32 = rng.gen_range(-1.5..1.5);
+                comp.draw_text(&font, &s, cx, text_y + dy, scale, rgba);
+                cx += cw;
+            }
+        }
 
         // --- Wavy underline ---
         let ul_y_base = text_y + th + underline_gap as f32 * 0.5;
@@ -93,12 +107,16 @@ impl WatermarkRenderer for HandwrittenRenderer {
         let ul_color = with_opacity(config.color, config.opacity * 0.8);
         let ul_rgba = to_rgba(ul_color);
 
+        // Random wave phase
+        let phase: f32 = rng.gen_range(0.0..2.0 * std::f32::consts::PI);
         for i in 0..wave_segments {
             let x1 = ul_start_x + i as f32 * segment_len;
             let x2 = ul_start_x + (i + 1) as f32 * segment_len;
-            // Gentle sine wave
-            let y1 = ul_y_base + wave_amplitude * (i as f32 * 0.5).sin();
-            let y2 = ul_y_base + wave_amplitude * ((i + 1) as f32 * 0.5).sin();
+            // Per-segment wave amplitude noise: ±20%
+            let amp1 = wave_amplitude * rng.gen_range(0.8..1.2);
+            let amp2 = wave_amplitude * rng.gen_range(0.8..1.2);
+            let y1 = ul_y_base + amp1 * (i as f32 * 0.5 + phase).sin();
+            let y2 = ul_y_base + amp2 * ((i + 1) as f32 * 0.5 + phase).sin();
             comp.draw_thick_line(x1 as i32, y1 as i32, x2 as i32, y2 as i32, 2, ul_rgba);
         }
 

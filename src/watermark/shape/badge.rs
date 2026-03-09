@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::cli::args::{FontWeight, Position};
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
@@ -57,27 +59,41 @@ impl WatermarkRenderer for BadgeRenderer {
         };
 
         let mut canvas = render_text_background(config, width, height, 0.3)?;
+        let mut rng = rand::thread_rng();
+
+        // Random shield position: ±3px from center
+        let cx = cx + rng.gen_range(-3..=3);
+        let cy = cy + rng.gen_range(-3..=3);
 
         // ── Build shield polygon ──
-        // Shape: wide at top with rounded shoulders, narrowing to a point at the bottom.
-        //   Top-left shoulder -> top-right shoulder -> right side -> bottom point -> left side
-        let hw = shield_w / 2; // half width
-        let hh = shield_h / 2; // half height
-        let shoulder_inset = hw / 6; // slight inset at top corners for shoulder curve
+        let hw = shield_w / 2;
+        let hh = shield_h / 2;
+        let shoulder_inset = hw / 6;
 
-        let shield_points = vec![
-            (cx - hw + shoulder_inset, cy - hh),               // top-left (slightly inset)
-            (cx + hw - shoulder_inset, cy - hh),               // top-right (slightly inset)
-            (cx + hw, cy - hh + shoulder_inset),               // right shoulder curve
-            (cx + hw, cy - hh / 4),                            // right upper body
-            (cx + hw - hw / 8, cy + hh / 4),                   // right mid taper
-            (cx + hw / 3, cy + hh - hh / 6),                   // right lower taper
-            (cx, cy + hh),                                     // bottom point
-            (cx - hw / 3, cy + hh - hh / 6),                   // left lower taper
-            (cx - hw + hw / 8, cy + hh / 4),                   // left mid taper (mirrored)
-            (cx - hw, cy - hh / 4),                            // left upper body
-            (cx - hw, cy - hh + shoulder_inset),               // left shoulder curve
+        let base_shield_points = vec![
+            (cx - hw + shoulder_inset, cy - hh),
+            (cx + hw - shoulder_inset, cy - hh),
+            (cx + hw, cy - hh + shoulder_inset),
+            (cx + hw, cy - hh / 4),
+            (cx + hw - hw / 8, cy + hh / 4),
+            (cx + hw / 3, cy + hh - hh / 6),
+            (cx, cy + hh),
+            (cx - hw / 3, cy + hh - hh / 6),
+            (cx - hw + hw / 8, cy + hh / 4),
+            (cx - hw, cy - hh / 4),
+            (cx - hw, cy - hh + shoulder_inset),
         ];
+
+        // Per-vertex jitter: ±1-2px
+        let shield_points: Vec<(i32, i32)> = base_shield_points
+            .iter()
+            .map(|&(px, py)| {
+                (
+                    px + rng.gen_range(-2..=2),
+                    py + rng.gen_range(-2..=2),
+                )
+            })
+            .collect();
 
         // Fill the shield
         canvas.fill_polygon(&shield_points, rgba);
@@ -126,7 +142,7 @@ impl WatermarkRenderer for BadgeRenderer {
         canvas.draw_polygon(&inner2_points, dark_rgba);
 
         // ── Star at the top of the shield ──
-        let star_y = cy - hh + shield_h / 6;
+        let star_y = cy - hh + shield_h / 6 + rng.gen_range(-1..=1);
         let star_outer = (shield_w as f32 * 0.10).ceil() as i32;
         let star_inner = (star_outer as f32 * 0.45) as i32;
         canvas.fill_star(cx, star_y, star_outer, star_inner, 5, white);

@@ -190,6 +190,9 @@ fn merge_toml_globals(config: &mut WatermarkConfig, toml: &TomlConfig) -> Result
     if let Some(v) = toml.filigrane {
         config.filigrane = v;
     }
+    if let Some(v) = toml.anti_ai {
+        config.anti_ai = v;
+    }
     if let Some(ref v) = toml.pages {
         config.pages = parse_page_range(v).map_err(|e| anyhow::anyhow!(e))?;
     }
@@ -350,6 +353,9 @@ fn merge_preset(config: &mut WatermarkConfig, preset: &PresetConfig) -> Result<(
     }
     if let Some(v) = preset.filigrane {
         config.filigrane = v;
+    }
+    if let Some(v) = preset.anti_ai {
+        config.anti_ai = v;
     }
     if let Some(ref v) = preset.pages {
         config.pages = parse_page_range(v).map_err(|e| anyhow::anyhow!(e))?;
@@ -526,6 +532,9 @@ fn merge_cli_args(config: &mut WatermarkConfig, args: &CliArgs) -> Result<()> {
     if let Some(v) = args.filigrane {
         config.filigrane = v;
     }
+    if args.no_anti_ai {
+        config.anti_ai = false;
+    }
     if let Some(ref v) = args.pages {
         config.pages = parse_page_range(v).map_err(|e| anyhow::anyhow!(e))?;
     }
@@ -644,6 +653,7 @@ fn preset_from_cli(args: &CliArgs) -> PresetConfig {
         invert: if args.invert { Some(true) } else { None },
         grayscale: if args.grayscale { Some(true) } else { None },
         filigrane: args.filigrane,
+        anti_ai: if args.no_anti_ai { Some(false) } else { None },
         pages: args.pages.clone(),
         skip_pages: args.skip_pages.clone(),
         layer_name: args.layer_name.clone(),

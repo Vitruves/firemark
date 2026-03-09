@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::cli::args::FontWeight;
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
@@ -167,7 +169,9 @@ impl WatermarkRenderer for FrameRenderer {
         }
 
         // ── Corner decorations: ornamental cross/plus at each corner ──
-        let corner_size = (inner_gap as f32 * 0.5).ceil() as i32;
+        let mut rng = rand::thread_rng();
+        // Random corner ornament size: ±2px
+        let corner_size = (inner_gap as f32 * 0.5).ceil() as i32 + rng.gen_range(-2..=2);
         let corners = [
             (outer_x + outer_thickness as i32 / 2, outer_y + outer_thickness as i32 / 2),
             (outer_x + outer_w - outer_thickness as i32 / 2, outer_y + outer_thickness as i32 / 2),
@@ -214,7 +218,9 @@ impl WatermarkRenderer for FrameRenderer {
 
         // ── Small decorative dots along the midpoint of each border edge ──
         let dot_r = 2;
-        let dot_spacing = (inner_gap as f32 * 0.8) as i32;
+        // Random dot spacing: ±15%
+        let base_dot_spacing = (inner_gap as f32 * 0.8) as i32;
+        let dot_spacing = (base_dot_spacing as f32 * rng.gen_range(0.85..1.15)).round() as i32;
         let mid_band = outer_thickness as i32 + inner_gap / 2;
 
         // Top and bottom midpoints: dots between the corner decorations
@@ -258,8 +264,8 @@ impl WatermarkRenderer for FrameRenderer {
                 let interior_scale = text_scale * 0.85;
                 let sec_scale = text_scale * 0.55;
 
-                // Subtle opacity for interior text (30% of configured opacity)
-                let interior_opacity = config.opacity * 0.3;
+                // Random interior text opacity variation (25-35% of configured opacity)
+                let interior_opacity = config.opacity * rng.gen_range(0.25..0.35);
                 let interior_color = with_opacity(config.color, interior_opacity);
                 let interior_rgba = to_rgba(interior_color);
 

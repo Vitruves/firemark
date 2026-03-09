@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::cli::args::FontWeight;
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
@@ -40,8 +42,12 @@ impl WatermarkRenderer for StampRenderer {
         // Generous padding around the text inside the borders.
         let pad_x = (scale * 0.55) as u32;
         let pad_y = (scale * 0.40) as u32;
+        let mut rng = rand::thread_rng();
         let border_w = config.border_width.max(3);
-        let gap = border_w + 2; // gap between outer and inner border
+        // Random border gap variation: +1..+4 instead of fixed +2
+        let gap = border_w + rng.gen_range(1..4);
+        // Random border line width variation: ±1px
+        let border_w = (border_w as i32 + rng.gen_range(-1..=1)).max(2) as u32;
 
         let stamp_w = tw.ceil() as u32 + pad_x * 2 + (border_w + gap + border_w) * 2;
         let stamp_h = th.ceil() as u32 + pad_y * 2 + (border_w + gap + border_w) * 2;
@@ -100,9 +106,9 @@ impl WatermarkRenderer for StampRenderer {
         // Render subtle intercalated text background behind the stamp.
         let mut canvas = render_text_background(config, width, height, 0.3)?;
 
-        // Blit the stamp onto the background canvas, centred.
-        let ox = (width as i32 - rotated.width() as i32) / 2 + config.offset.0;
-        let oy = (height as i32 - rotated.height() as i32) / 2 + config.offset.1;
+        // Blit the stamp onto the background canvas, centred with random offset ±3px.
+        let ox = (width as i32 - rotated.width() as i32) / 2 + config.offset.0 + rng.gen_range(-3..=3);
+        let oy = (height as i32 - rotated.height() as i32) / 2 + config.offset.1 + rng.gen_range(-3..=3);
         canvas.blit(&rotated, ox, oy);
 
         Ok(canvas)

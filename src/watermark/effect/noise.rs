@@ -108,9 +108,10 @@ impl WatermarkRenderer for NoiseRenderer {
 
         // Apply per-pixel noise and random deletion to all non-transparent pixels.
         let mut rng = rand::thread_rng();
-        let noise_rgb: i16 = 40;
+        // Vary noise_rgb in [30, 60] and delete_chance in [0.10, 0.25] per render
+        let noise_rgb: i16 = rng.gen_range(30..=60);
         let noise_alpha: i16 = 20;
-        let delete_chance: f32 = 0.15; // 15% pixel deletion
+        let delete_chance: f32 = rng.gen_range(0.10..0.25);
 
         let snapshot = canvas.image().clone();
         for y in 0..height {

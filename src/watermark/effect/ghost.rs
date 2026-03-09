@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
 use crate::render::canvas::Canvas;
@@ -45,8 +47,19 @@ impl WatermarkRenderer for GhostRenderer {
             return Ok(Canvas::new(width, height));
         }
 
+        let mut rng = rand::thread_rng();
+
         // Ghost uses very low opacity -- clamp to at most 0.15.
         let ghost_opacity = config.opacity.min(0.15);
+
+        // Randomize emboss direction: angle from random direction
+        let emboss_angle: f32 = rng.gen_range(0.0..2.0 * std::f32::consts::PI);
+        // Randomize offset magnitude: [0.8, 1.5] px
+        let emboss_mag: f32 = rng.gen_range(0.8..1.5);
+        let hi_dx = -emboss_mag * emboss_angle.cos();
+        let hi_dy = -emboss_mag * emboss_angle.sin();
+        let sh_dx = emboss_mag * emboss_angle.cos();
+        let sh_dy = emboss_mag * emboss_angle.sin();
 
         // Build colour variants for the emboss effect.
         let [r, g, b, _] = config.color;
@@ -55,15 +68,10 @@ impl WatermarkRenderer for GhostRenderer {
         let hi_r = ((r as u16 + 60).min(255)) as u8;
         let hi_g = ((g as u16 + 60).min(255)) as u8;
         let hi_b = ((b as u16 + 60).min(255)) as u8;
-        let highlight = with_opacity([hi_r, hi_g, hi_b, 255], ghost_opacity);
-        let hi_rgba = to_rgba(highlight);
-
         // Shadow: shift RGB towards black.
         let sh_r = r.saturating_sub(60);
         let sh_g = g.saturating_sub(60);
         let sh_b = b.saturating_sub(60);
-        let shadow = with_opacity([sh_r, sh_g, sh_b, 255], ghost_opacity);
-        let sh_rgba = to_rgba(shadow);
 
         // Oversized working canvas for full-page coverage after rotation.
         let diag = ((width as f32).powi(2) + (height as f32).powi(2)).sqrt();
@@ -91,11 +99,18 @@ impl WatermarkRenderer for GhostRenderer {
                 let x = col as f32 * cell_w + x_stagger + (cell_w - draw_tw) / 2.0;
                 let y = row as f32 * cell_h + (cell_h - draw_th) / 2.0;
 
-                // 1. Highlight pass -- offset (-1, -1).
-                work.draw_text(&font, draw_text, x - 1.0, y - 1.0, draw_scale, hi_rgba);
+                // Per-cell opacity jitter: ±0.02 around ghost_opacity
+                let cell_opacity = (ghost_opacity + rng.gen_range(-0.02_f32..0.02)).clamp(0.01, 0.20);
+                let cell_hi = with_opacity([hi_r, hi_g, hi_b, 255], cell_opacity);
+                let cell_hi_rgba = to_rgba(cell_hi);
+                let cell_sh = with_opacity([sh_r, sh_g, sh_b, 255], cell_opacity);
+                let cell_sh_rgba = to_rgba(cell_sh);
 
-                // 2. Shadow pass -- offset (+1, +1).
-                work.draw_text(&font, draw_text, x + 1.0, y + 1.0, draw_scale, sh_rgba);
+                // 1. Highlight pass -- randomized direction.
+                work.draw_text(&font, draw_text, x + hi_dx, y + hi_dy, draw_scale, cell_hi_rgba);
+
+                // 2. Shadow pass -- randomized direction.
+                work.draw_text(&font, draw_text, x + sh_dx, y + sh_dy, draw_scale, cell_sh_rgba);
             }
         }
 

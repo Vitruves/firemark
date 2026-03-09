@@ -101,6 +101,10 @@ impl WatermarkRenderer for MosaicRenderer {
                 let color = with_opacity(base_color, tile_opacity);
                 let rgba = to_rgba(color);
 
+                // Per-tile scale jitter ±5%
+                let scale_jitter: f32 = rng.gen_range(0.95..1.05);
+                let jittered_scale = draw_scale * scale_jitter;
+
                 // Render this tile's text on a small canvas and rotate it.
                 let mut tile = Canvas::new(cur_tile_w, cur_tile_h);
                 tile.draw_text(
@@ -108,7 +112,7 @@ impl WatermarkRenderer for MosaicRenderer {
                     draw_text,
                     pad as f32,
                     pad as f32,
-                    draw_scale,
+                    jittered_scale,
                     rgba,
                 );
 

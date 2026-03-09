@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
 use crate::render::canvas::Canvas;
@@ -48,6 +50,7 @@ impl WatermarkRenderer for WeaveRenderer {
         let base_opacity = config.opacity;
 
         let mut canvas = Canvas::new(width, height);
+        let mut rng = rand::thread_rng();
 
         // Each "set" is a full-page grid at a different angle.
         // We build each set on an oversized canvas, rotate, and crop.
@@ -60,8 +63,8 @@ impl WatermarkRenderer for WeaveRenderer {
         let cols = (work_size as f32 / cell_w).ceil() as i32 + 2;
         let rows = (work_size as f32 / cell_h).ceil() as i32 + 2;
 
-        // Set 1: +45 degrees at full opacity.
-        let angle1 = 45.0_f32;
+        // Set 1: randomize angle in [42, 48] degrees.
+        let angle1: f32 = rng.gen_range(42.0..48.0);
         let color1 = with_opacity(base_color, base_opacity);
         let rgba1 = to_rgba(color1);
 
@@ -97,10 +100,10 @@ impl WatermarkRenderer for WeaveRenderer {
             }
         }
 
-        // Set 2: -45 degrees at 70% opacity for visible depth.
-        // Use secondary text for this grid if available; otherwise use main text.
-        let angle2 = -45.0_f32;
-        let color2 = with_opacity(base_color, base_opacity * 0.70);
+        // Set 2: randomize angle in [-48, -42] degrees with randomized opacity [0.60, 0.80].
+        let angle2: f32 = rng.gen_range(-48.0..-42.0);
+        let set2_opacity: f32 = rng.gen_range(0.60..0.80);
+        let color2 = with_opacity(base_color, base_opacity * set2_opacity);
         let rgba2 = to_rgba(color2);
 
         let text2 = if has_secondary { &secondary } else { &text };

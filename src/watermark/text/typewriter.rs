@@ -81,12 +81,12 @@ impl WatermarkRenderer for TypewriterRenderer {
         let cy_offset = (work_size as f32 - height as f32) / 2.0;
 
         let mut rng = rand::thread_rng();
-        let jitter = (scale * 0.04).max(1.0);
-        let sec_jitter = (sec_scale * 0.04).max(1.0);
+        // Widen jitter from ±4% to ±8% of scale
+        let jitter = (scale * 0.08).max(1.0);
+        let sec_jitter = (sec_scale * 0.08).max(1.0);
 
-        // Faint line color — much lower opacity.
-        let line_color = with_opacity(config.color, config.opacity * 0.15);
-        let line_rgba = to_rgba(line_color);
+        // Faint line color — much lower opacity (base, per-line variation applied later).
+        let line_base_opacity = config.opacity * 0.15;
 
         // Calculate total rows — if secondary text, rows alternate (main, sec, main, sec...).
         // Each pair occupies line_spacing + sec_line_spacing vertical space.
@@ -125,11 +125,16 @@ impl WatermarkRenderer for TypewriterRenderer {
                 current_line_spacing = line_spacing;
             }
 
-            let base_y = y_cursor;
+            // Add row-level Y jitter
+            let row_y_jitter: f32 = rng.gen_range(-2.0..2.0);
+            let base_y = y_cursor + row_y_jitter;
             y_cursor += current_line_spacing;
 
-            // Faint ruled line under this text row.
+            // Faint ruled line under this text row with random opacity
+            let line_opacity_mult: f32 = rng.gen_range(0.5..1.0);
             let rule_y = (base_y + current_th + 4.0) as i32;
+            let line_color = with_opacity(config.color, line_base_opacity * line_opacity_mult);
+            let line_rgba = to_rgba(line_color);
             work.draw_line(
                 (cx_offset + margin as f32) as i32,
                 rule_y,

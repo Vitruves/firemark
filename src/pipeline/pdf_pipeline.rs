@@ -93,7 +93,15 @@ pub fn process_pdf(config: &WatermarkConfig, _args: &CliArgs) -> anyhow::Result<
             let _ = overlay_image_on_canvas(&mut canvas, img_path, config);
         }
 
-        let img = canvas.into_image();
+        let mut img = canvas.into_image();
+
+        // Apply universal perturbation for AI-removal hardening.
+        crate::watermark::perturb::perturb(&mut img);
+
+        // Apply anti-AI adversarial prompt injection.
+        if config.anti_ai {
+            crate::watermark::anti_ai::apply_anti_ai(&mut img, config.color);
+        }
 
         // Split RGBA into RGB + alpha for PDF XObject + SMask.
         let (rgb_data, alpha_data) = split_rgba(&img);

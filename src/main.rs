@@ -21,6 +21,9 @@ fn main() -> Result<()> {
         .format_timestamp(None)
         .init();
 
+    // Non-blocking version check (silently skipped if offline).
+    firemark::update::check_for_update();
+
     if args.list_presets {
         return firemark::config::loader::list_presets(&args.config);
     }

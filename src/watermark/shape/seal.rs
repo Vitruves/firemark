@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::cli::args::{FontWeight, Position};
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
@@ -55,27 +57,32 @@ impl WatermarkRenderer for SealRenderer {
         };
 
         let mut canvas = render_text_background(config, width, height, 0.3)?;
+        let mut rng = rand::thread_rng();
 
-        // ── Outermost ring: thick circle (3-4px) ──
+        // ── Outermost ring: thick circle (3-4px) with micro-variation ──
         let outer_thickness = 4u32;
-        canvas.draw_thick_circle(cx, cy, radius, outer_thickness, rgba);
+        // Random ring radii micro-variation: ±1px
+        let outer_r_jitter: i32 = rng.gen_range(-1..=1);
+        canvas.draw_thick_circle(cx, cy, radius + outer_r_jitter, outer_thickness, rgba);
 
         // ── Gap, then inner ring: thin circle ──
         let ring_gap = (radius as f32 * 0.06).ceil() as i32;
-        let inner_ring_r = radius - ring_gap as i32 - outer_thickness as i32 / 2;
+        let inner_ring_r = radius - ring_gap as i32 - outer_thickness as i32 / 2 + rng.gen_range(-1..=1);
         canvas.draw_circle(cx, cy, inner_ring_r, rgba);
 
         // ── Decorative elements between the two rings ──
-        // Place 10 small stars evenly spaced around the ring gap
-        let num_decorations = 10u32;
+        // Random number of decorative stars: 8-12 instead of fixed 10
+        let num_decorations: u32 = rng.gen_range(8..=12);
         let deco_radius = (inner_ring_r as f32 + ring_gap as f32 / 2.0
             + outer_thickness as f32 / 2.0) as f32;
         let deco_star_outer = (ring_gap as f32 * 0.45).ceil() as i32;
         let deco_star_inner = (deco_star_outer as f32 * 0.45) as i32;
 
+        // Random starting angle for star ring
+        let star_ring_start: f32 = rng.gen_range(0.0..std::f32::consts::PI * 2.0);
         for i in 0..num_decorations {
             let angle = std::f32::consts::PI * 2.0 * i as f32 / num_decorations as f32
-                - std::f32::consts::FRAC_PI_2;
+                - std::f32::consts::FRAC_PI_2 + star_ring_start;
             let dx = cx as f32 + deco_radius * angle.cos();
             let dy = cy as f32 + deco_radius * angle.sin();
             if deco_star_outer > 1 {

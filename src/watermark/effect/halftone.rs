@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
 use crate::render::canvas::Canvas;
@@ -107,15 +109,20 @@ impl WatermarkRenderer for HalftoneRenderer {
 
         // ── Step 2: Convert the temporary image to halftone dots ──
 
-        let dot_spacing: u32 = 5; // grid cell size in pixels
+        let mut rng = rand::thread_rng();
+        // Random dot_spacing: [4, 7] instead of fixed 5
+        let dot_spacing: u32 = rng.gen_range(4..=7);
+        // Random dot grid phase: offset (0 to spacing-1) in X and Y
+        let phase_x: u32 = rng.gen_range(0..dot_spacing);
+        let phase_y: u32 = rng.gen_range(0..dot_spacing);
         let max_radius = (dot_spacing as f32 / 2.0) as i32;
         let tmp_img = tmp.image();
 
         let mut canvas = Canvas::new(width, height);
 
-        let mut gy: u32 = 0;
+        let mut gy: u32 = phase_y;
         while gy < height {
-            let mut gx: u32 = 0;
+            let mut gx: u32 = phase_x;
             while gx < width {
                 // Compute average alpha in this grid cell.
                 let mut alpha_sum: u32 = 0;
@@ -134,8 +141,11 @@ impl WatermarkRenderer for HalftoneRenderer {
                         // Dot radius proportional to coverage.
                         let radius =
                             ((avg_alpha / 255.0) * max_radius as f32).ceil() as i32;
-                        let dcx = gx as i32 + dot_spacing as i32 / 2;
-                        let dcy = gy as i32 + dot_spacing as i32 / 2;
+                        // Per-dot position jitter: ±1px
+                        let jx: i32 = rng.gen_range(-1..=1);
+                        let jy: i32 = rng.gen_range(-1..=1);
+                        let dcx = gx as i32 + dot_spacing as i32 / 2 + jx;
+                        let dcy = gy as i32 + dot_spacing as i32 / 2 + jy;
                         if radius > 0 {
                             canvas.fill_circle(dcx, dcy, radius, rgba);
                         }

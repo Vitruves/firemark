@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
 use crate::render::canvas::Canvas;
@@ -25,9 +27,6 @@ pub fn render_text_background(
     let font = load_font(config.font.as_deref(), config.font_weight)?;
 
     let base_opacity = config.opacity * opacity_factor;
-    let color = with_opacity(config.color, base_opacity);
-    let rgba = to_rgba(color);
-
     // Auto-scale main text to ~12% of page width
     let scale = config.font_size.unwrap_or_else(|| {
         auto_scale(&main_text, width, config.scale.min(0.15), &font).max(14.0)
@@ -51,6 +50,11 @@ pub fn render_text_background(
     let work_size = (diag * 1.5).ceil() as u32;
 
     let mut work = Canvas::new(work_size, work_size);
+    let mut rng = rand::thread_rng();
+
+    // Random grid phase offset — shifts entire grid origin each render.
+    let phase_x: f32 = rng.gen_range(0.0..main_cell_w);
+    let phase_y: f32 = rng.gen_range(0.0..row_h);
 
     let main_cols = (work_size as f32 / main_cell_w).ceil() as i32 + 2;
     let sec_cols = (work_size as f32 / sec_cell_w).ceil() as i32 + 2;
@@ -62,15 +66,33 @@ pub fn render_text_background(
 
         if is_secondary_row {
             for col in -1..sec_cols {
-                let x = col as f32 * sec_cell_w + stagger;
-                let y = row as f32 * row_h;
-                work.draw_text(&font, &secondary, x, y, sec_scale, rgba);
+                // Per-cell position jitter
+                let dx: f32 = rng.gen_range(-sec_cell_w * 0.03..sec_cell_w * 0.03);
+                let dy: f32 = rng.gen_range(-row_h * 0.03..row_h * 0.03);
+                let x = col as f32 * sec_cell_w + stagger + phase_x + dx;
+                let y = row as f32 * row_h + phase_y + dy;
+
+                // Per-cell opacity jitter
+                let alpha_mult: f32 = rng.gen_range(0.92..1.0);
+                let cell_color = with_opacity(config.color, base_opacity * alpha_mult);
+                let cell_rgba = to_rgba(cell_color);
+
+                work.draw_text(&font, &secondary, x, y, sec_scale, cell_rgba);
             }
         } else {
             for col in -1..main_cols {
-                let x = col as f32 * main_cell_w + stagger;
-                let y = row as f32 * row_h;
-                work.draw_text(&font, &main_text, x, y, scale, rgba);
+                // Per-cell position jitter
+                let dx: f32 = rng.gen_range(-main_cell_w * 0.03..main_cell_w * 0.03);
+                let dy: f32 = rng.gen_range(-row_h * 0.03..row_h * 0.03);
+                let x = col as f32 * main_cell_w + stagger + phase_x + dx;
+                let y = row as f32 * row_h + phase_y + dy;
+
+                // Per-cell opacity jitter
+                let alpha_mult: f32 = rng.gen_range(0.92..1.0);
+                let cell_color = with_opacity(config.color, base_opacity * alpha_mult);
+                let cell_rgba = to_rgba(cell_color);
+
+                work.draw_text(&font, &main_text, x, y, scale, cell_rgba);
             }
         }
     }

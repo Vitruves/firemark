@@ -68,10 +68,11 @@ impl WatermarkRenderer for RedactedRenderer {
         let nominal_bar_h = (th * 1.8).max(scale * 2.0);
         let spacing = usable_h / num_bars as f32;
 
-        let bar_x_start = margin as i32;
         let bar_width = width - margin * 2;
 
         for i in 0..num_bars {
+            // Random left-edge start ±5px
+            let bar_x_start = margin as i32 + rng.gen_range(-5..=5);
             // Determine if this bar uses secondary text (alternating bars).
             let is_secondary_bar = has_secondary && i % 2 != 0;
             let bar_text = if is_secondary_bar { &secondary } else { &text };
@@ -108,7 +109,8 @@ impl WatermarkRenderer for RedactedRenderer {
                 mini.fill_rect(0, local_bar_y, mini_w, bar_h.ceil() as u32, bar_rgba);
 
                 // Repeat text across the bar.
-                let text_gap = bar_tw * 0.6;
+                // Random text gap in bar: 0.4-0.8 × bar_tw
+                let text_gap = bar_tw * rng.gen_range(0.4..0.8);
                 let mut tx = margin as f32 * 0.5;
                 let ty = local_bar_y as f32 + (bar_h - bar_th) / 2.0;
                 while tx < mini_w as f32 {
@@ -131,8 +133,8 @@ impl WatermarkRenderer for RedactedRenderer {
                     bar_rgba,
                 );
 
-                // Repeat text across the bar.
-                let text_gap = bar_tw * 0.6;
+                // Repeat text across the bar with random gap.
+                let text_gap = bar_tw * rng.gen_range(0.4..0.8);
                 let mut tx = bar_x_start as f32 + margin as f32 * 0.5;
                 let ty = bar_y as f32 + (bar_h - bar_th) / 2.0;
                 while tx < (bar_x_start + bar_width as i32) as f32 {

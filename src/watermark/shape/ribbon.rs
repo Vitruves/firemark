@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::cli::args::{FontWeight, Position};
 use crate::config::types::WatermarkConfig;
 use crate::error::Result;
@@ -65,7 +67,9 @@ impl WatermarkRenderer for RibbonRenderer {
         ribbon.fill_rect(0, 0, ribbon_len, ribbon_band_h, rgba);
 
         // Draw darker border lines along top and bottom edges of the ribbon
-        let border_thickness = 2u32;
+        let mut rng = rand::thread_rng();
+        // Random border thickness: 1-3px instead of fixed 2
+        let border_thickness: u32 = rng.gen_range(1..=3);
         for i in 0..border_thickness {
             ribbon.draw_line(
                 0,
@@ -112,8 +116,9 @@ impl WatermarkRenderer for RibbonRenderer {
         // ── Create the output canvas and determine corner placement ──
         let mut canvas = render_text_background(config, width, height, 0.3)?;
 
-        // Fold triangle size
-        let fold_size = (ribbon_band_h as f32 * 0.35).ceil() as i32;
+        // Random fold triangle size: ±10%
+        let base_fold_size = (ribbon_band_h as f32 * 0.35).ceil();
+        let fold_size = (base_fold_size * rng.gen_range(0.90..1.10)).ceil() as i32;
 
         // Determine which corner to place the ribbon in
         let is_top = matches!(
@@ -200,8 +205,10 @@ impl WatermarkRenderer for RibbonRenderer {
             canvas.fill_polygon(&fold_left, fold_rgba);
         }
 
-        // ── Blit the rotated ribbon onto the canvas ──
-        canvas.blit(&rotated, ox, oy);
+        // ── Blit the rotated ribbon onto the canvas with random offset ±2px ──
+        let ribbon_jx: i32 = rng.gen_range(-2..=2);
+        let ribbon_jy: i32 = rng.gen_range(-2..=2);
+        canvas.blit(&rotated, ox + ribbon_jx, oy + ribbon_jy);
 
         Ok(canvas)
     }

@@ -284,6 +284,11 @@ pub struct CliArgs {
     #[arg(long, value_enum, help_heading = "Style & Appearance")]
     pub filigrane: Option<FiligraneStyle>,
 
+    // ── Anti-AI ──
+    /// Disable adversarial prompt text that deters AI-based watermark removal (on by default)
+    #[arg(long, help_heading = "Style & Appearance")]
+    pub no_anti_ai: bool,
+
     // ── PDF-specific ──
     /// Pages to watermark — e.g. 1,3-5,8 or "all" (default: all)
     #[arg(long, help_heading = "PDF")]

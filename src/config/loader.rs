@@ -67,6 +67,7 @@ pub struct TomlConfig {
     pub invert: Option<bool>,
     pub grayscale: Option<bool>,
     pub filigrane: Option<FiligraneStyle>,
+    pub anti_ai: Option<bool>,
 
     // ── PDF-specific ──
     pub pages: Option<String>,
@@ -143,6 +144,7 @@ pub struct PresetConfig {
     pub invert: Option<bool>,
     pub grayscale: Option<bool>,
     pub filigrane: Option<FiligraneStyle>,
+    pub anti_ai: Option<bool>,
 
     // ── PDF-specific ──
     pub pages: Option<String>,

@@ -117,6 +117,22 @@ firemark id.png -m "Rental application" --filigrane moire
 firemark id.png -m "Rental application" --filigrane none   # disable
 ```
 
+## AI-removal hardening
+
+Every render is non-deterministic by default. firemark applies universal
+post-render perturbation (alpha jitter, sub-pixel color noise, edge micro-dots,
+sparse ghost pixels) and per-renderer randomization so that no two outputs are
+pixel-identical — even with the same settings. This makes it impossible for AI
+vision models to learn a predictable pattern to subtract.
+
+On top of that, adversarial prompt-injection strips are embedded by default to
+confuse AI watermark removal tools. Disable with `--no-anti-ai` if you don't
+want the visible prompt text:
+
+```bash
+firemark doc.png -m "CONFIDENTIAL" --no-anti-ai
+```
+
 ## Common options
 
 ```
@@ -135,6 +151,7 @@ firemark id.png -m "Rental application" --filigrane none   # disable
     --border          Draw a border around the watermark
     --shadow          Add a drop shadow
     --filigrane       Security filigrane style (default: guilloche)
+    --no-anti-ai      Disable adversarial prompt injection (on by default)
 ```
 
 ## PDF options
