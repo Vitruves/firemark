@@ -1,6 +1,6 @@
 [package]
 name = "firemark"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Stop sending naked documents. Fast watermarking CLI for images and PDFs."
 license = "MIT"

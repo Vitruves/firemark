@@ -24,6 +24,12 @@ firemark makes this effortless: one command, any image or PDF, 17 visual
 styles, cryptographic filigrane patterns that resist editing, and batch
 processing for entire folders.
 
+<p align="center">
+  <img src="assets/img/paycheck-firemark-comparison.png" alt="Before and after watermarking" width="800">
+  <br>
+  <em>Before and after — one command, document is now traceable and tamper-evident.</em>
+</p>
+
 ## Install
 
 From [crates.io](https://crates.io/crates/firemark):
