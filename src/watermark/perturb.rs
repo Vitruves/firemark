@@ -10,6 +10,9 @@ use rand::Rng;
 ///   2. Sub-pixel color noise on every non-transparent pixel
 ///   3. Edge micro-dots along the alpha boundary
 ///   4. Sparse ghost pixels across the full canvas
+// Divisions here are guarded by explicit count/nc checks with a shared
+// early-return or fallback, so `checked_div` doesn't fit cleanly.
+#[allow(clippy::manual_checked_ops)]
 pub fn perturb(wm: &mut RgbaImage) {
     let mut rng = rand::thread_rng();
     let (w, h) = (wm.width(), wm.height());

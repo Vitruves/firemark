@@ -50,13 +50,13 @@ impl WatermarkRenderer for MosaicRenderer {
         let base_opacity = config.opacity;
 
         // Grid cell size.
-        let cell_w = if config.tile_cols.is_some() {
-            width as f32 / config.tile_cols.unwrap() as f32
+        let cell_w = if let Some(cols) = config.tile_cols {
+            width as f32 / cols as f32
         } else {
             tw + spacing
         };
-        let cell_h = if config.tile_rows.is_some() {
-            height as f32 / config.tile_rows.unwrap() as f32
+        let cell_h = if let Some(rows) = config.tile_rows {
+            height as f32 / rows as f32
         } else {
             th + spacing
         };
