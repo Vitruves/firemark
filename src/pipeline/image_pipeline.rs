@@ -9,12 +9,19 @@ use image::{DynamicImage, ImageEncoder, Rgba, RgbaImage};
 use log::{debug, info};
 use lopdf::{dictionary, Dictionary, Document, Object, Stream};
 
-use crate::cli::args::{CliArgs, Position};
+use rand::seq::SliceRandom;
+use rand::Rng;
+
+use crate::cli::args::{BlendMode, CliArgs, Position};
 use crate::config::types::WatermarkConfig;
 use crate::pipeline::io::{detect_format, resolve_output_path, FileFormat};
 use crate::template::TemplateContext;
+use crate::render::canvas::Canvas;
 use crate::render::color::{to_rgba, with_opacity};
+use crate::render::compositor::{get_blend_fn, BlendFn};
 use crate::render::qr::generate_qr;
+use crate::render::saliency::SaliencyMap;
+use crate::render::transform::{rotate_canvas, scale_canvas};
 use crate::watermark::create_renderer;
 use crate::watermark::filigrane::render_filigrane;
 
@@ -66,7 +73,8 @@ pub fn process_image(config: &WatermarkConfig, _args: &CliArgs) -> anyhow::Resul
         .context("Watermark renderer failed")?;
 
     // 4b. Overlay cryptographic filigrane security pattern.
-    let filigrane = render_filigrane(width, height, config.color, 0.18, config.filigrane);
+    let fil_opacity = config.opacity * 0.36; // scales with --opacity (0.18 at default 0.5)
+    let filigrane = render_filigrane(width, height, config.color, fil_opacity, config.filigrane);
     wm_canvas.blit(&filigrane, 0, 0);
 
     // 4c. Overlay QR code if --qr-data was provided.
@@ -95,9 +103,10 @@ pub fn process_image(config: &WatermarkConfig, _args: &CliArgs) -> anyhow::Resul
     // 6. Composite the watermark onto the base image.
     composite(&mut base, &wm_image, config);
 
-    // 6b. Apply anti-AI adversarial prompt injection.
+    // 6b. Apply stroke entanglement + anti-AI adversarial prompt injection.
     if config.anti_ai {
-        crate::watermark::anti_ai::apply_anti_ai(&mut base, config.color);
+        crate::watermark::entangle::entangle_strokes(&mut base, config.color, config.opacity);
+        crate::watermark::anti_ai::apply_anti_ai(&mut base, config.color, config.opacity);
     }
 
     // 7. Save the result — use output extension when available, else input.
@@ -131,7 +140,7 @@ pub fn qr_position(cw: u32, ch: u32, qw: u32, qh: u32, pos: Position, margin: u3
 // ── Internal helpers ────────────────────────────────────────────────────────
 
 /// Multiply every pixel's alpha channel by `opacity` (0.0 -- 1.0).
-fn apply_opacity(mut img: RgbaImage, opacity: f32) -> RgbaImage {
+pub(crate) fn apply_opacity(mut img: RgbaImage, opacity: f32) -> RgbaImage {
     let factor = opacity.clamp(0.0, 1.0);
     if (factor - 1.0).abs() < f32::EPSILON {
         return img;
@@ -146,13 +155,33 @@ fn apply_opacity(mut img: RgbaImage, opacity: f32) -> RgbaImage {
 /// and offset.  For `Position::Tile` the watermark is repeated across the
 /// entire canvas; for `Position::Center` it is placed dead-centre; for the
 /// four corner positions it is anchored accordingly.
+///
+/// All compositing goes through the entangled blender (see `blend_entangled`)
+/// and tile mode uses per-tile jitter, rotation, scale, and opacity variation
+/// with saliency-biased placement, so removal generalizes poorly: solving one
+/// tile does not solve the others, and inpainting must touch real content.
 fn composite(base: &mut RgbaImage, watermark: &RgbaImage, config: &WatermarkConfig) {
     let (bw, bh) = (base.width() as i32, base.height() as i32);
     let (ww, wh) = (watermark.width() as i32, watermark.height() as i32);
     let margin = config.margin as i32;
     let (ox, oy) = config.offset;
 
+    let mut rng = rand::thread_rng();
+    let fields = ModulationFields::new(base.width(), base.height(), &mut rng);
+    // Plain alpha-over carries no dependence on the underlying pixels, so by
+    // default (None) the entangled color component uses luminance-adaptive
+    // multiply/screen, which keeps the mark at full strength on flat white or
+    // black while entangling it with midtone content.
+    let blend = match config.blend {
+        BlendMode::Normal => None,
+        m => Some(get_blend_fn(m)),
+    };
+
     match config.position {
+        // Full-canvas marks (the full-page renderers) have nothing to tile.
+        Position::Tile if ww >= bw && wh >= bh => {
+            blend_entangled(base, watermark, 0, 0, 1.0, blend, &fields);
+        }
         Position::Tile => {
             let spacing = config.tile_spacing as i32;
             let step_x = ww + spacing;
@@ -160,11 +189,32 @@ fn composite(base: &mut RgbaImage, watermark: &RgbaImage, config: &WatermarkConf
             if step_x <= 0 || step_y <= 0 {
                 return;
             }
+
+            let saliency = SaliencyMap::from_image(base);
+            let variants = tile_variants(watermark, &mut rng);
+            let jitter = (spacing / 2).max(step_x.min(step_y) / 8).max(4);
+
             let mut y = 0;
             while y < bh {
                 let mut x = 0;
                 while x < bw {
-                    alpha_blend(base, watermark, x, y);
+                    let variant = variants.choose(&mut rng).expect("variants non-empty");
+                    let (vw, vh) = (variant.width(), variant.height());
+                    // Sample a few jittered candidates and keep the one that
+                    // overlaps the most document content.
+                    let mut best = (x, y);
+                    let mut best_score = -1.0f32;
+                    for _ in 0..3 {
+                        let cx = x + rng.gen_range(-jitter..=jitter);
+                        let cy = y + rng.gen_range(-jitter..=jitter);
+                        let score = saliency.region_score(cx, cy, vw, vh);
+                        if score > best_score {
+                            best_score = score;
+                            best = (cx, cy);
+                        }
+                    }
+                    let alpha_factor = rng.gen_range(0.75..1.1);
+                    blend_entangled(base, variant, best.0, best.1, alpha_factor, blend, &fields);
                     x += step_x;
                 }
                 y += step_y;
@@ -172,7 +222,124 @@ fn composite(base: &mut RgbaImage, watermark: &RgbaImage, config: &WatermarkConf
         }
         _ => {
             let (x, y) = anchor_position(bw, bh, ww, wh, config.position, margin);
-            alpha_blend(base, watermark, x + ox, y + oy);
+            blend_entangled(base, watermark, x + ox, y + oy, 1.0, blend, &fields);
+        }
+    }
+}
+
+/// Pre-render a handful of rotated/scaled variants of the tile watermark so
+/// no two tiles are pixel-identical and a removal model cannot solve one tile
+/// and apply the solution everywhere.
+fn tile_variants(wm: &RgbaImage, rng: &mut impl Rng) -> Vec<RgbaImage> {
+    let mut out = Vec::with_capacity(4);
+    // Padding absorbs corner clipping for rotations up to ~14° (sin 14° ≈ 0.24).
+    let pad = (wm.width().max(wm.height()) as f32 * 0.13) as u32 + 2;
+    for _ in 0..4 {
+        let angle = rng.gen_range(-14.0f32..14.0);
+        let scale = rng.gen_range(0.85f32..1.15);
+        let mut padded = Canvas::new(wm.width() + pad * 2, wm.height() + pad * 2);
+        padded.blit(&Canvas::from_image(wm.clone()), pad as i32, pad as i32);
+        let rotated = rotate_canvas(&padded, angle);
+        out.push(scale_canvas(&rotated, scale).into_image());
+    }
+    out
+}
+
+/// Low-frequency modulation fields — sums of randomly-phased sines whose
+/// wavelengths span a third to a full canvas dimension. They vary the mark's
+/// color mix and opacity smoothly across the image so no constant opacity or
+/// hue signature exists for a segmentation model to key on, while staying
+/// gradual enough to be invisible to a human reader.
+struct ModulationFields {
+    color: [(f32, f32, f32); 2],
+    alpha: [(f32, f32, f32); 2],
+}
+
+impl ModulationFields {
+    fn new(w: u32, h: u32, rng: &mut impl Rng) -> Self {
+        let dim = w.min(h).max(1) as f32;
+        let field = |rng: &mut dyn rand::RngCore| {
+            let wavelength = dim * rng.gen_range(0.3..1.0);
+            let dir: f32 = rng.gen_range(0.0..std::f32::consts::TAU);
+            let f = std::f32::consts::TAU / wavelength;
+            (f * dir.cos(), f * dir.sin(), rng.gen_range(0.0..std::f32::consts::TAU))
+        };
+        Self {
+            color: [field(rng), field(rng)],
+            alpha: [field(rng), field(rng)],
+        }
+    }
+
+    fn eval(pair: &[(f32, f32, f32); 2], x: f32, y: f32) -> f32 {
+        let a = (pair[0].0 * x + pair[0].1 * y + pair[0].2).sin();
+        let b = (pair[1].0 * x + pair[1].1 * y + pair[1].2).sin();
+        0.5 + 0.25 * a + 0.25 * b
+    }
+
+    /// How much pure mark color vs. background-entangled color, in [0, 1].
+    fn color_mix(&self, x: f32, y: f32) -> f32 {
+        Self::eval(&self.color, x, y)
+    }
+
+    /// Opacity modulation, in [0, 1].
+    fn alpha_mod(&self, x: f32, y: f32) -> f32 {
+        Self::eval(&self.alpha, x, y)
+    }
+}
+
+/// Composite `overlay` onto `base` at `(dx, dy)`, entangling the mark with
+/// the underlying content: each pixel's color is a spatially-varying mix of
+/// the mark color and a blend with the background (`None` = adaptive
+/// multiply/screen chosen per pixel by background luminance), and its opacity
+/// is modulated by a low-frequency field and `alpha_factor`.
+fn blend_entangled(
+    base: &mut RgbaImage,
+    overlay: &RgbaImage,
+    dx: i32,
+    dy: i32,
+    alpha_factor: f32,
+    blend: Option<BlendFn>,
+    fields: &ModulationFields,
+) {
+    let multiply = get_blend_fn(BlendMode::Multiply);
+    let screen = get_blend_fn(BlendMode::Screen);
+    let (bw, bh) = (base.width() as i32, base.height() as i32);
+    let (ow, oh) = (overlay.width() as i32, overlay.height() as i32);
+
+    let x_start = dx.max(0);
+    let y_start = dy.max(0);
+    let x_end = (dx + ow).min(bw);
+    let y_end = (dy + oh).min(bh);
+
+    for y in y_start..y_end {
+        for x in x_start..x_end {
+            let sx = (x - dx) as u32;
+            let sy = (y - dy) as u32;
+            let fg = overlay.get_pixel(sx, sy);
+            if fg.0[3] == 0 {
+                continue;
+            }
+
+            let (fx, fy) = (x as f32, y as f32);
+            let amod = 0.72 + 0.56 * fields.alpha_mod(fx, fy);
+            let alpha = (fg.0[3] as f32 / 255.0 * alpha_factor * amod).clamp(0.0, 1.0);
+            if alpha <= 0.0 {
+                continue;
+            }
+
+            let bg = base.get_pixel(x as u32, y as u32);
+            let bg_lum = crate::render::color::luminance(bg);
+            let entangle_fn = blend.unwrap_or(if bg_lum >= 128.0 { multiply } else { screen });
+            let mix_t = 0.35 + 0.4 * fields.color_mix(fx, fy);
+            let inv = 1.0 - alpha;
+            let mut out = [0u8; 4];
+            for (ch, o) in out.iter_mut().take(3).enumerate() {
+                let entangled = entangle_fn(bg.0[ch], fg.0[ch]) as f32;
+                let ink = fg.0[ch] as f32 * mix_t + entangled * (1.0 - mix_t);
+                *o = (ink * alpha + bg.0[ch] as f32 * inv).round().clamp(0.0, 255.0) as u8;
+            }
+            out[3] = (bg.0[3] as f32 + fg.0[3] as f32 * inv).min(255.0).round() as u8;
+            base.put_pixel(x as u32, y as u32, Rgba(out));
         }
     }
 }
@@ -188,38 +355,6 @@ fn anchor_position(bw: i32, bh: i32, ww: i32, wh: i32, pos: Position, margin: i3
         Position::BottomLeft => (margin, bh - wh - margin),
         Position::BottomRight => (bw - ww - margin, bh - wh - margin),
         Position::Tile => (0, 0), // handled separately
-    }
-}
-
-/// Alpha-blend `overlay` onto `base` with its top-left corner at `(dx, dy)`.
-fn alpha_blend(base: &mut RgbaImage, overlay: &RgbaImage, dx: i32, dy: i32) {
-    let (bw, bh) = (base.width() as i32, base.height() as i32);
-    let (ow, oh) = (overlay.width() as i32, overlay.height() as i32);
-
-    let x_start = dx.max(0);
-    let y_start = dy.max(0);
-    let x_end = (dx + ow).min(bw);
-    let y_end = (dy + oh).min(bh);
-
-    for y in y_start..y_end {
-        for x in x_start..x_end {
-            let sx = (x - dx) as u32;
-            let sy = (y - dy) as u32;
-            let fg = overlay.get_pixel(sx, sy);
-            let alpha = fg.0[3] as f32 / 255.0;
-            if alpha <= 0.0 {
-                continue;
-            }
-            let bg = base.get_pixel(x as u32, y as u32);
-            let inv = 1.0 - alpha;
-            let blended = Rgba([
-                (fg.0[0] as f32 * alpha + bg.0[0] as f32 * inv).round() as u8,
-                (fg.0[1] as f32 * alpha + bg.0[1] as f32 * inv).round() as u8,
-                (fg.0[2] as f32 * alpha + bg.0[2] as f32 * inv).round() as u8,
-                (bg.0[3] as f32 + fg.0[3] as f32 * inv).min(255.0).round() as u8,
-            ]);
-            base.put_pixel(x as u32, y as u32, blended);
-        }
     }
 }
 
@@ -403,7 +538,6 @@ fn overlay_image(
     config: &WatermarkConfig,
 ) -> anyhow::Result<()> {
     use crate::render::canvas::Canvas as C;
-    use crate::render::transform::scale_canvas;
 
     let src = image::open(path)
         .with_context(|| format!("Failed to open overlay image: {}", path.display()))?;

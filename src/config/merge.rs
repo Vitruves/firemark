@@ -211,6 +211,9 @@ fn merge_toml_globals(config: &mut WatermarkConfig, toml: &TomlConfig) -> Result
     if let Some(v) = toml.flatten {
         config.flatten = v;
     }
+    if let Some(v) = toml.copy_poison {
+        config.copy_poison = v;
+    }
     if let Some(v) = toml.behind {
         config.behind = v;
     }
@@ -380,6 +383,9 @@ fn merge_preset(config: &mut WatermarkConfig, preset: &PresetConfig) -> Result<(
     }
     if let Some(v) = preset.flatten {
         config.flatten = v;
+    }
+    if let Some(v) = preset.copy_poison {
+        config.copy_poison = v;
     }
     if let Some(v) = preset.behind {
         config.behind = v;
@@ -565,6 +571,9 @@ fn merge_cli_args(config: &mut WatermarkConfig, args: &CliArgs) -> Result<()> {
     if args.no_flatten {
         config.flatten = false;
     }
+    if args.no_copy_poison {
+        config.copy_poison = false;
+    }
     if args.behind {
         config.behind = true;
     }
@@ -678,6 +687,7 @@ fn preset_from_cli(args: &CliArgs) -> PresetConfig {
         skip_pages: args.skip_pages.clone(),
         layer_name: args.layer_name.clone(),
         flatten: if args.no_flatten { Some(false) } else { None },
+        copy_poison: if args.no_copy_poison { Some(false) } else { None },
         behind: if args.behind { Some(true) } else { None },
         quality: args.quality,
         dpi: args.dpi,

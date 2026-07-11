@@ -75,6 +75,7 @@ pub struct WatermarkConfig {
     pub layer_name: String,
     pub flatten: bool,
     pub behind: bool,
+    pub copy_poison: bool,
 
     // ── Output Quality ──
     pub quality: u8,
@@ -145,6 +146,7 @@ impl Default for WatermarkConfig {
             layer_name: "Watermark".to_string(),
             flatten: true,
             behind: false,
+            copy_poison: true,
 
             quality: 90,
             dpi: 150,

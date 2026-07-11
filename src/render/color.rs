@@ -33,6 +33,26 @@ pub fn to_rgba(color: [u8; 4]) -> Rgba<u8> {
     Rgba(color)
 }
 
+/// Perceptual luminance (ITU-R BT.601) of an RGBA pixel, ignoring alpha.
+pub fn luminance(px: &Rgba<u8>) -> f32 {
+    0.299 * px[0] as f32 + 0.587 * px[1] as f32 + 0.114 * px[2] as f32
+}
+
+/// Adapt an ink color to the local background so the mark has no constant
+/// color signature to segment on: darken it over light backgrounds, lighten
+/// it over dark ones, leave midtones alone. Alpha is preserved.
+pub fn adaptive_ink(color: [u8; 4], bg_luminance: f32) -> [u8; 4] {
+    if bg_luminance > 150.0 {
+        let t = ((bg_luminance - 150.0) / 105.0).clamp(0.0, 1.0) * 0.55;
+        lerp(color, [0, 0, 0, color[3]], t)
+    } else if bg_luminance < 90.0 {
+        let t = ((90.0 - bg_luminance) / 90.0).clamp(0.0, 1.0) * 0.55;
+        lerp(color, [255, 255, 255, color[3]], t)
+    } else {
+        color
+    }
+}
+
 /// Linearly interpolate between two colors. `t` is clamped to `[0.0, 1.0]`.
 pub fn lerp(a: [u8; 4], b: [u8; 4], t: f32) -> [u8; 4] {
     let t = t.clamp(0.0, 1.0);

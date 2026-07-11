@@ -76,6 +76,7 @@ pub struct TomlConfig {
     pub skip_pages: Option<String>,
     pub layer_name: Option<String>,
     pub flatten: Option<bool>,
+    pub copy_poison: Option<bool>,
     pub behind: Option<bool>,
 
     // ── Output Quality ──
@@ -155,6 +156,7 @@ pub struct PresetConfig {
     pub skip_pages: Option<String>,
     pub layer_name: Option<String>,
     pub flatten: Option<bool>,
+    pub copy_poison: Option<bool>,
     pub behind: Option<bool>,
 
     // ── Output Quality ──

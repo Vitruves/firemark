@@ -1,6 +1,7 @@
 pub mod anti_ai;
 pub mod background;
 pub mod effect;
+pub mod entangle;
 pub mod filigrane;
 pub mod pattern;
 pub mod perturb;
