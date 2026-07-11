@@ -31,9 +31,9 @@ impl WatermarkRenderer for StampRenderer {
 
         // The stamp text should span roughly 50-60% of the page width.
         let target_ratio = (config.scale * 1.4).clamp(0.40, 0.65);
-        let scale = config.font_size.unwrap_or_else(|| {
-            auto_scale(&text, width, target_ratio, &font)
-        });
+        let scale = config
+            .font_size
+            .unwrap_or_else(|| auto_scale(&text, width, target_ratio, &font));
 
         let (tw, th) = measure_text(&font, &text, scale);
         let color = with_opacity(config.color, config.opacity);
@@ -107,8 +107,10 @@ impl WatermarkRenderer for StampRenderer {
         let mut canvas = render_text_background(config, width, height, 0.3)?;
 
         // Blit the stamp onto the background canvas, centred with random offset ±3px.
-        let ox = (width as i32 - rotated.width() as i32) / 2 + config.offset.0 + rng.gen_range(-3..=3);
-        let oy = (height as i32 - rotated.height() as i32) / 2 + config.offset.1 + rng.gen_range(-3..=3);
+        let ox =
+            (width as i32 - rotated.width() as i32) / 2 + config.offset.0 + rng.gen_range(-3..=3);
+        let oy =
+            (height as i32 - rotated.height() as i32) / 2 + config.offset.1 + rng.gen_range(-3..=3);
         canvas.blit(&rotated, ox, oy);
 
         Ok(canvas)

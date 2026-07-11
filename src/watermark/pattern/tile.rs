@@ -31,7 +31,9 @@ impl WatermarkRenderer for TileRenderer {
         let spacing = config.tile_spacing.max(60) as f32;
         let scale = config.font_size.unwrap_or_else(|| {
             // Text should be readable — auto-scale to ~80% of tile cell width
-            auto_scale(&text, spacing as u32, 0.80, &font).max(14.0).min(spacing * 0.95)
+            auto_scale(&text, spacing as u32, 0.80, &font)
+                .max(14.0)
+                .min(spacing * 0.95)
         });
         let sec_scale = scale * 0.55;
 

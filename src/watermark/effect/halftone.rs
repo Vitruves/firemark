@@ -33,7 +33,9 @@ impl WatermarkRenderer for HalftoneRenderer {
 
         let spacing = config.tile_spacing.max(30) as f32;
         let scale = config.font_size.unwrap_or_else(|| {
-            auto_scale(&text, spacing as u32, 0.65, &font).max(10.0).min(spacing * 0.85)
+            auto_scale(&text, spacing as u32, 0.65, &font)
+                .max(10.0)
+                .min(spacing * 0.85)
         });
         let sec_scale = scale * 0.55;
 
@@ -139,8 +141,7 @@ impl WatermarkRenderer for HalftoneRenderer {
                     let avg_alpha = alpha_sum as f32 / count as f32;
                     if avg_alpha > 3.0 {
                         // Dot radius proportional to coverage.
-                        let radius =
-                            ((avg_alpha / 255.0) * max_radius as f32).ceil() as i32;
+                        let radius = ((avg_alpha / 255.0) * max_radius as f32).ceil() as i32;
                         // Per-dot position jitter: ±1px
                         let jx: i32 = rng.gen_range(-1..=1);
                         let jy: i32 = rng.gen_range(-1..=1);

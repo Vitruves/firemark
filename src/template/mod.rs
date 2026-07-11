@@ -1,23 +1,12 @@
 /// Template variable resolution for watermark text.
 
+#[derive(Default)]
 pub struct TemplateContext {
     pub filename: String,
     pub ext: String,
     pub page: Option<u32>,
     pub total_pages: Option<u32>,
     pub counter: u32,
-}
-
-impl Default for TemplateContext {
-    fn default() -> Self {
-        Self {
-            filename: String::new(),
-            ext: String::new(),
-            page: None,
-            total_pages: None,
-            counter: 0,
-        }
-    }
 }
 
 /// Resolve template variables in `template`, replacing `{var}` placeholders

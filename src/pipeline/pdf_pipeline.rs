@@ -22,11 +22,8 @@ use crate::watermark::filigrane::render_filigrane;
 /// image XObject on each page.
 pub fn process_pdf(config: &WatermarkConfig, args: &CliArgs) -> anyhow::Result<()> {
     let input = &config.input;
-    let output_path = resolve_output_path(
-        input,
-        config.output.as_deref(),
-        config.suffix.as_deref(),
-    );
+    let output_path =
+        resolve_output_path(input, config.output.as_deref(), config.suffix.as_deref());
 
     // If output format is an image, rasterize the PDF and use the image pipeline.
     match crate::pipeline::io::detect_format(&output_path) {
@@ -47,8 +44,8 @@ pub fn process_pdf(config: &WatermarkConfig, args: &CliArgs) -> anyhow::Result<(
     }
 
     debug!("Loading PDF: {}", input.display());
-    let mut doc =
-        Document::load(input).with_context(|| format!("Failed to load PDF: {}", input.display()))?;
+    let mut doc = Document::load(input)
+        .with_context(|| format!("Failed to load PDF: {}", input.display()))?;
 
     let page_range = &config.pages;
     let page_ids: Vec<(u32, lopdf::ObjectId)> = doc
@@ -89,12 +86,18 @@ pub fn process_pdf(config: &WatermarkConfig, args: &CliArgs) -> anyhow::Result<(
 
         // Overlay QR code if --qr-data was provided.
         if let Some(ref qr_data) = config.qr_data {
-            let qr_size = config.qr_code_size
+            let qr_size = config
+                .qr_code_size
                 .unwrap_or_else(|| (px_w.min(px_h) as f32 * config.scale * 0.5).max(60.0) as u32);
             let color = to_rgba(with_opacity(config.color, config.opacity));
             if let Ok(qr) = generate_qr(qr_data, qr_size, color) {
                 let (qx, qy) = crate::pipeline::image_pipeline::qr_position(
-                    px_w, px_h, qr.width(), qr.height(), config.qr_code_position, config.margin,
+                    px_w,
+                    px_h,
+                    qr.width(),
+                    qr.height(),
+                    config.qr_code_position,
+                    config.margin,
                 );
                 canvas.blit(&qr, qx, qy);
             }
@@ -106,10 +109,8 @@ pub fn process_pdf(config: &WatermarkConfig, args: &CliArgs) -> anyhow::Result<(
         }
 
         // Apply opacity to the watermark overlay.
-        let mut img = crate::pipeline::image_pipeline::apply_opacity(
-            canvas.into_image(),
-            config.opacity,
-        );
+        let mut img =
+            crate::pipeline::image_pipeline::apply_opacity(canvas.into_image(), config.opacity);
 
         // Apply universal perturbation for AI-removal hardening.
         crate::watermark::perturb::perturb(&mut img);
@@ -239,7 +240,7 @@ fn process_pdf_to_image(
             config
                 .skip_pages
                 .as_ref()
-                .map_or(true, |skip| !skip.contains(*p))
+                .is_none_or(|skip| !skip.contains(*p))
         })
         .collect();
     drop(doc);
@@ -308,7 +309,16 @@ fn rasterize_pdf_page(
 
     // Try pdftoppm (poppler-utils) — best cross-platform option.
     let result = std::process::Command::new("pdftoppm")
-        .args(["-png", "-r", &dpi_str, "-f", &page_str, "-l", &page_str, "-singlefile"])
+        .args([
+            "-png",
+            "-r",
+            &dpi_str,
+            "-f",
+            &page_str,
+            "-l",
+            &page_str,
+            "-singlefile",
+        ])
         .arg(pdf_path)
         .arg(&prefix)
         .output();
@@ -374,10 +384,7 @@ fn split_rgba(img: &image::RgbaImage) -> (Vec<u8>, Vec<u8>) {
 
 /// Read page dimensions from MediaBox. Falls back to US Letter.
 fn get_page_dimensions(doc: &Document, page_id: lopdf::ObjectId) -> anyhow::Result<(f32, f32)> {
-    let page = doc
-        .get_object(page_id)
-        .ok()
-        .and_then(|o| o.as_dict().ok());
+    let page = doc.get_object(page_id).ok().and_then(|o| o.as_dict().ok());
 
     if let Some(dict) = page {
         if let Ok(Object::Array(media_box)) = dict.get(b"MediaBox") {
@@ -398,7 +405,7 @@ fn get_page_dimensions(doc: &Document, page_id: lopdf::ObjectId) -> anyhow::Resu
 fn object_to_f32(obj: &Object) -> Option<f32> {
     match obj {
         Object::Integer(i) => Some(*i as f32),
-        Object::Real(r) => Some(*r as f32),
+        Object::Real(r) => Some(*r),
         _ => None,
     }
 }
@@ -422,17 +429,23 @@ fn add_xobject_resource(
 
     if let Some(res_id) = resources_id {
         let res_obj = doc.get_object_mut(res_id).context("Resources not found")?;
-        let res_dict = res_obj.as_dict_mut().map_err(|_| anyhow::anyhow!("Not a dict"))?;
+        let res_dict = res_obj
+            .as_dict_mut()
+            .map_err(|_| anyhow::anyhow!("Not a dict"))?;
 
         if !res_dict.has(b"XObject") {
             res_dict.set("XObject", Dictionary::new());
         }
-        let xobj_entry = res_dict.get_mut(b"XObject").map_err(|_| anyhow::anyhow!("XObject not found"))?;
+        let xobj_entry = res_dict
+            .get_mut(b"XObject")
+            .map_err(|_| anyhow::anyhow!("XObject not found"))?;
         match xobj_entry {
             Object::Reference(xobj_dict_id) => {
                 let xid = *xobj_dict_id;
                 let xd = doc.get_object_mut(xid).context("XObject dict not found")?;
-                let xd = xd.as_dict_mut().map_err(|_| anyhow::anyhow!("Not a dict"))?;
+                let xd = xd
+                    .as_dict_mut()
+                    .map_err(|_| anyhow::anyhow!("Not a dict"))?;
                 xd.set(name, Object::Reference(xobj_id));
             }
             Object::Dictionary(xd) => {
@@ -448,7 +461,9 @@ fn add_xobject_resource(
         }
     } else {
         let page = doc.get_object_mut(page_id).context("Page not found")?;
-        let page_dict = page.as_dict_mut().map_err(|_| anyhow::anyhow!("Not a dict"))?;
+        let page_dict = page
+            .as_dict_mut()
+            .map_err(|_| anyhow::anyhow!("Not a dict"))?;
 
         if !page_dict.has(b"Resources") {
             page_dict.set("Resources", Dictionary::new());
@@ -512,14 +527,24 @@ fn insert_content_stream(
 /// Merge all content streams on a page into one uncompressed stream.
 fn flatten_page_contents(doc: &mut Document, page_id: lopdf::ObjectId) {
     let content_ids: Vec<lopdf::ObjectId> = {
-        let Ok(page) = doc.get_object(page_id) else { return };
+        let Ok(page) = doc.get_object(page_id) else {
+            return;
+        };
         let Ok(dict) = page.as_dict() else { return };
-        let Ok(contents) = dict.get(b"Contents") else { return };
+        let Ok(contents) = dict.get(b"Contents") else {
+            return;
+        };
         match contents {
             Object::Reference(id) => vec![*id],
             Object::Array(arr) => arr
                 .iter()
-                .filter_map(|o| if let Object::Reference(id) = o { Some(*id) } else { None })
+                .filter_map(|o| {
+                    if let Object::Reference(id) = o {
+                        Some(*id)
+                    } else {
+                        None
+                    }
+                })
                 .collect(),
             _ => return,
         }
@@ -632,7 +657,7 @@ fn build_copy_poison(page_w: f32, page_h: f32, seed: u32) -> String {
         // Vary font size to match common document text sizes.
         let sizes = [9.0_f32, 10.0, 11.0, 12.0];
         let size = sizes[(next() as usize) % sizes.len()];
-        let _ = write!(ops, "/FmCP {size:.0} Tf\n");
+        let _ = writeln!(ops, "/FmCP {size:.0} Tf");
 
         // Approximate char width for this font size (Helvetica average ~0.5 em).
         let char_w = size * 0.5;
@@ -652,7 +677,7 @@ fn build_copy_poison(page_w: f32, page_h: f32, seed: u32) -> String {
                 text.push(glyphs[(next() as usize) % glyphs.len()] as char);
             }
 
-            let _ = write!(ops, "1 0 0 1 {x:.1} {y:.1} Tm ({text}) Tj\n");
+            let _ = writeln!(ops, "1 0 0 1 {x:.1} {y:.1} Tm ({text}) Tj");
         }
 
         y -= 4.0;
@@ -688,17 +713,23 @@ fn add_font_resource(
 
     if let Some(res_id) = resources_id {
         let res_obj = doc.get_object_mut(res_id).context("Resources not found")?;
-        let res_dict = res_obj.as_dict_mut().map_err(|_| anyhow::anyhow!("Not a dict"))?;
+        let res_dict = res_obj
+            .as_dict_mut()
+            .map_err(|_| anyhow::anyhow!("Not a dict"))?;
 
         if !res_dict.has(b"Font") {
             res_dict.set("Font", Dictionary::new());
         }
-        let font_entry = res_dict.get_mut(b"Font").map_err(|_| anyhow::anyhow!("Font not found"))?;
+        let font_entry = res_dict
+            .get_mut(b"Font")
+            .map_err(|_| anyhow::anyhow!("Font not found"))?;
         match font_entry {
             Object::Reference(font_dict_id) => {
                 let fid = *font_dict_id;
                 let fd = doc.get_object_mut(fid).context("Font dict not found")?;
-                let fd = fd.as_dict_mut().map_err(|_| anyhow::anyhow!("Not a dict"))?;
+                let fd = fd
+                    .as_dict_mut()
+                    .map_err(|_| anyhow::anyhow!("Not a dict"))?;
                 fd.set(name, Object::Reference(font_id));
             }
             Object::Dictionary(fd) => {
@@ -714,7 +745,9 @@ fn add_font_resource(
         }
     } else {
         let page = doc.get_object_mut(page_id).context("Page not found")?;
-        let page_dict = page.as_dict_mut().map_err(|_| anyhow::anyhow!("Not a dict"))?;
+        let page_dict = page
+            .as_dict_mut()
+            .map_err(|_| anyhow::anyhow!("Not a dict"))?;
 
         if !page_dict.has(b"Resources") {
             page_dict.set("Resources", Dictionary::new());

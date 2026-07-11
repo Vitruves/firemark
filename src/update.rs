@@ -10,7 +10,7 @@ const CRATES_IO_API: &str = "https://crates.io/api/v1/crates/firemark";
 /// (no internet, timeout, parse error) so it never blocks the user.
 pub fn check_for_update() {
     // Spawn in a best-effort fashion — 2 second timeout max.
-    let result = std::panic::catch_unwind(|| try_check());
+    let result = std::panic::catch_unwind(try_check);
     if let Ok(Some(latest)) = result {
         if is_newer(&latest, CURRENT_VERSION) {
             info!(

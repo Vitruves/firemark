@@ -21,10 +21,7 @@ pub fn process_batch(config: &WatermarkConfig, args: &CliArgs) -> anyhow::Result
     let input_dir = &config.input;
 
     if !input_dir.is_dir() {
-        anyhow::bail!(
-            "Batch input is not a directory: {}",
-            input_dir.display()
-        );
+        anyhow::bail!("Batch input is not a directory: {}", input_dir.display());
     }
 
     // Collect all supported files, skipping previously watermarked outputs.
@@ -38,7 +35,9 @@ pub fn process_batch(config: &WatermarkConfig, args: &CliArgs) -> anyhow::Result
         .filter(|entry| entry.file_type().is_file())
         .filter(|entry| is_supported(entry.path()))
         .filter(|entry| {
-            let stem = entry.path().file_stem()
+            let stem = entry
+                .path()
+                .file_stem()
                 .unwrap_or_default()
                 .to_string_lossy();
             !stem.ends_with(suffix)
@@ -86,17 +85,17 @@ pub fn process_batch(config: &WatermarkConfig, args: &CliArgs) -> anyhow::Result
         files.par_iter().for_each(|file_path| {
             let mut file_config = config.clone();
             file_config.input = file_path.clone();
-            let out_path = resolve_output_path(
-                file_path,
-                None,
-                config.suffix.as_deref(),
-            );
+            let out_path = resolve_output_path(file_path, None, config.suffix.as_deref());
             file_config.output = Some(out_path.clone());
 
             match process_single_file(&file_config, args) {
                 Ok(()) => {
                     let done = processed.fetch_add(1, Ordering::Relaxed) + 1;
-                    info!("[{done}/{total}] {} -> {}", file_path.display(), out_path.display());
+                    info!(
+                        "[{done}/{total}] {} -> {}",
+                        file_path.display(),
+                        out_path.display()
+                    );
                 }
                 Err(e) => {
                     let done = processed.fetch_add(1, Ordering::Relaxed) + 1;

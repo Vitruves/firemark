@@ -33,7 +33,9 @@ impl WatermarkRenderer for NoiseRenderer {
 
         let spacing = config.tile_spacing.max(30) as f32;
         let scale = config.font_size.unwrap_or_else(|| {
-            auto_scale(&text, spacing as u32, 0.65, &font).max(10.0).min(spacing * 0.85)
+            auto_scale(&text, spacing as u32, 0.65, &font)
+                .max(10.0)
+                .min(spacing * 0.85)
         });
         let sec_scale = scale * 0.55;
 

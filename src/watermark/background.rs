@@ -28,9 +28,9 @@ pub fn render_text_background(
 
     let base_opacity = config.opacity * opacity_factor;
     // Auto-scale main text to ~12% of page width
-    let scale = config.font_size.unwrap_or_else(|| {
-        auto_scale(&main_text, width, config.scale.min(0.15), &font).max(14.0)
-    });
+    let scale = config
+        .font_size
+        .unwrap_or_else(|| auto_scale(&main_text, width, config.scale.min(0.15), &font).max(14.0));
     let sec_scale = scale * 0.55;
 
     let (tw, th) = measure_text(&font, &main_text, scale);
@@ -43,7 +43,11 @@ pub fn render_text_background(
 
     let h_gap = config.tile_spacing.max(20) as f32;
     let main_cell_w = tw + h_gap;
-    let sec_cell_w = if has_secondary { stw + h_gap } else { main_cell_w };
+    let sec_cell_w = if has_secondary {
+        stw + h_gap
+    } else {
+        main_cell_w
+    };
     let row_h = th + h_gap * 0.5;
 
     let diag = ((width as f32).powi(2) + (height as f32).powi(2)).sqrt();
@@ -108,10 +112,7 @@ pub fn render_text_background(
         for dx in 0..width {
             let sx = ox + dx as i32;
             let sy = oy + dy as i32;
-            if sx >= 0
-                && sy >= 0
-                && (sx as u32) < rotated.width()
-                && (sy as u32) < rotated.height()
+            if sx >= 0 && sy >= 0 && (sx as u32) < rotated.width() && (sy as u32) < rotated.height()
             {
                 let px = *src.get_pixel(sx as u32, sy as u32);
                 if px[3] > 0 {

@@ -67,14 +67,14 @@ impl WatermarkRenderer for SealRenderer {
 
         // ── Gap, then inner ring: thin circle ──
         let ring_gap = (radius as f32 * 0.06).ceil() as i32;
-        let inner_ring_r = radius - ring_gap as i32 - outer_thickness as i32 / 2 + rng.gen_range(-1..=1);
+        let inner_ring_r = radius - ring_gap - outer_thickness as i32 / 2 + rng.gen_range(-1..=1);
         canvas.draw_circle(cx, cy, inner_ring_r, rgba);
 
         // ── Decorative elements between the two rings ──
         // Random number of decorative stars: 8-12 instead of fixed 10
         let num_decorations: u32 = rng.gen_range(8..=12);
-        let deco_radius = (inner_ring_r as f32 + ring_gap as f32 / 2.0
-            + outer_thickness as f32 / 2.0) as f32;
+        let deco_radius =
+            (inner_ring_r as f32 + ring_gap as f32 / 2.0 + outer_thickness as f32 / 2.0) as f32;
         let deco_star_outer = (ring_gap as f32 * 0.45).ceil() as i32;
         let deco_star_inner = (deco_star_outer as f32 * 0.45) as i32;
 
@@ -82,7 +82,8 @@ impl WatermarkRenderer for SealRenderer {
         let star_ring_start: f32 = rng.gen_range(0.0..std::f32::consts::PI * 2.0);
         for i in 0..num_decorations {
             let angle = std::f32::consts::PI * 2.0 * i as f32 / num_decorations as f32
-                - std::f32::consts::FRAC_PI_2 + star_ring_start;
+                - std::f32::consts::FRAC_PI_2
+                + star_ring_start;
             let dx = cx as f32 + deco_radius * angle.cos();
             let dy = cy as f32 + deco_radius * angle.sin();
             if deco_star_outer > 1 {
@@ -134,9 +135,9 @@ impl WatermarkRenderer for SealRenderer {
         }
 
         // ── Main text: bold, large, centered ──
-        let main_scale = config.font_size.unwrap_or_else(|| {
-            auto_scale(&main_text, (inner_ring_r as u32) * 2, 0.55, &bold_font)
-        });
+        let main_scale = config
+            .font_size
+            .unwrap_or_else(|| auto_scale(&main_text, (inner_ring_r as u32) * 2, 0.55, &bold_font));
         let (mtw, mth) = measure_text(&bold_font, &main_text, main_scale);
         let mtx = cx as f32 - mtw / 2.0;
         let mty = cy as f32 - mth / 2.0;

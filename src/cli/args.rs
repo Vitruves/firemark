@@ -3,7 +3,9 @@ use std::path::PathBuf;
 
 use crate::watermark::WatermarkType;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum Position {
     Center,
@@ -14,7 +16,9 @@ pub enum Position {
     Tile,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum BlendMode {
     Normal,
@@ -24,7 +28,9 @@ pub enum BlendMode {
     SoftLight,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum FontWeight {
     Thin,
@@ -34,14 +40,18 @@ pub enum FontWeight {
     Black,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum FontStyle {
     Normal,
     Italic,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum BackgroundPattern {
     None,
@@ -51,7 +61,9 @@ pub enum BackgroundPattern {
     Crosshatch,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum BorderStyle {
     Solid,
@@ -59,7 +71,9 @@ pub enum BorderStyle {
     Dotted,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum FiligraneStyle {
     Full,
@@ -106,7 +120,12 @@ pub struct CliArgs {
     pub output: Option<PathBuf>,
 
     /// Output filename suffix: {name}-{suffix}.ext
-    #[arg(short = 'S', long, value_name = "TEXT", help_heading = "Input / Output")]
+    #[arg(
+        short = 'S',
+        long,
+        value_name = "TEXT",
+        help_heading = "Input / Output"
+    )]
     pub suffix: Option<String>,
 
     /// Recurse into folders
@@ -127,7 +146,15 @@ pub struct CliArgs {
 
     // ── Watermark Type ──
     /// Watermark style (list below)
-    #[arg(short = 't', long = "type", value_enum, default_value = "diagonal", value_name = "TYPE", hide_possible_values = true, help_heading = "Watermark Type")]
+    #[arg(
+        short = 't',
+        long = "type",
+        value_enum,
+        default_value = "diagonal",
+        value_name = "TYPE",
+        hide_possible_values = true,
+        help_heading = "Watermark Type"
+    )]
     pub watermark_type: WatermarkType,
 
     // ── Content & Templates ──
@@ -148,7 +175,13 @@ pub struct CliArgs {
     pub qr_data: Option<String>,
 
     /// QR position, same values as -p (default: center)
-    #[arg(long, value_enum, value_name = "POS", hide_possible_values = true, help_heading = "Content")]
+    #[arg(
+        long,
+        value_enum,
+        value_name = "POS",
+        hide_possible_values = true,
+        help_heading = "Content"
+    )]
     pub qr_code_position: Option<Position>,
 
     /// QR size in pixels (default: auto)
@@ -169,11 +202,23 @@ pub struct CliArgs {
     pub font_size: Option<f32>,
 
     /// Weight: thin|light|regular|bold|black
-    #[arg(long, value_enum, value_name = "W", hide_possible_values = true, help_heading = "Typography")]
+    #[arg(
+        long,
+        value_enum,
+        value_name = "W",
+        hide_possible_values = true,
+        help_heading = "Typography"
+    )]
     pub font_weight: Option<FontWeight>,
 
     /// Style: normal|italic
-    #[arg(long, value_enum, value_name = "S", hide_possible_values = true, help_heading = "Typography")]
+    #[arg(
+        long,
+        value_enum,
+        value_name = "S",
+        hide_possible_values = true,
+        help_heading = "Typography"
+    )]
     pub font_style: Option<FontStyle>,
 
     /// Extra letter spacing in pixels
@@ -182,11 +227,24 @@ pub struct CliArgs {
 
     // ── Position & Layout ──
     /// center|top-left|top-right|bottom-left|bottom-right|tile
-    #[arg(short, long, value_enum, value_name = "POS", hide_possible_values = true, help_heading = "Position & Layout")]
+    #[arg(
+        short,
+        long,
+        value_enum,
+        value_name = "POS",
+        hide_possible_values = true,
+        help_heading = "Position & Layout"
+    )]
     pub position: Option<Position>,
 
     /// Rotation in degrees (default: -45)
-    #[arg(short, long, allow_hyphen_values = true, value_name = "DEG", help_heading = "Position & Layout")]
+    #[arg(
+        short,
+        long,
+        allow_hyphen_values = true,
+        value_name = "DEG",
+        help_heading = "Position & Layout"
+    )]
     pub rotation: Option<f32>,
 
     /// Edge margin in pixels (default: 20)
@@ -219,11 +277,23 @@ pub struct CliArgs {
     pub color: Option<String>,
 
     /// Opacity, 0.0-1.0 (default: 0.5)
-    #[arg(short = 'O', long, value_name = "0-1", help_heading = "Style & Appearance")]
+    #[arg(
+        short = 'O',
+        long,
+        value_name = "0-1",
+        help_heading = "Style & Appearance"
+    )]
     pub opacity: Option<f32>,
 
     /// Backdrop pattern: none|grid|dots|lines|crosshatch
-    #[arg(short, long, value_enum, value_name = "PAT", hide_possible_values = true, help_heading = "Style & Appearance")]
+    #[arg(
+        short,
+        long,
+        value_enum,
+        value_name = "PAT",
+        hide_possible_values = true,
+        help_heading = "Style & Appearance"
+    )]
     pub background: Option<BackgroundPattern>,
 
     /// Backdrop color (default: #CCCCCC)
@@ -235,7 +305,13 @@ pub struct CliArgs {
     pub bg_opacity: Option<f32>,
 
     /// Blend: normal|multiply|screen|overlay|soft-light
-    #[arg(long, value_enum, value_name = "MODE", hide_possible_values = true, help_heading = "Style & Appearance")]
+    #[arg(
+        long,
+        value_enum,
+        value_name = "MODE",
+        hide_possible_values = true,
+        help_heading = "Style & Appearance"
+    )]
     pub blend: Option<BlendMode>,
 
     /// Draw a border around the watermark
@@ -251,7 +327,13 @@ pub struct CliArgs {
     pub border_width: Option<u32>,
 
     /// Border style: solid|dashed|dotted
-    #[arg(long, value_enum, value_name = "STYLE", hide_possible_values = true, help_heading = "Style & Appearance")]
+    #[arg(
+        long,
+        value_enum,
+        value_name = "STYLE",
+        hide_possible_values = true,
+        help_heading = "Style & Appearance"
+    )]
     pub border_style: Option<BorderStyle>,
 
     /// Add a drop shadow
@@ -284,7 +366,13 @@ pub struct CliArgs {
 
     // ── Security ──
     /// Filigrane pattern (default: guilloche, list below)
-    #[arg(long, value_enum, value_name = "STYLE", hide_possible_values = true, help_heading = "Security")]
+    #[arg(
+        long,
+        value_enum,
+        value_name = "STYLE",
+        hide_possible_values = true,
+        help_heading = "Security"
+    )]
     pub filigrane: Option<FiligraneStyle>,
 
     /// Disable anti-AI hardening (adversarial text + entangle strokes)
@@ -379,13 +467,29 @@ pub struct CliArgs {
 fn cli_styles() -> clap::builder::Styles {
     use clap::builder::styling::{AnsiColor, Effects, Style};
     clap::builder::Styles::styled()
-        .header(Style::new().fg_color(Some(AnsiColor::Yellow.into())).effects(Effects::BOLD))
-        .usage(Style::new().fg_color(Some(AnsiColor::Yellow.into())).effects(Effects::BOLD))
+        .header(
+            Style::new()
+                .fg_color(Some(AnsiColor::Yellow.into()))
+                .effects(Effects::BOLD),
+        )
+        .usage(
+            Style::new()
+                .fg_color(Some(AnsiColor::Yellow.into()))
+                .effects(Effects::BOLD),
+        )
         .literal(Style::new().fg_color(Some(AnsiColor::Green.into())))
         .placeholder(Style::new().fg_color(Some(AnsiColor::Cyan.into())))
         .valid(Style::new().fg_color(Some(AnsiColor::Green.into())))
-        .invalid(Style::new().fg_color(Some(AnsiColor::Red.into())).effects(Effects::BOLD))
-        .error(Style::new().fg_color(Some(AnsiColor::Red.into())).effects(Effects::BOLD))
+        .invalid(
+            Style::new()
+                .fg_color(Some(AnsiColor::Red.into()))
+                .effects(Effects::BOLD),
+        )
+        .error(
+            Style::new()
+                .fg_color(Some(AnsiColor::Red.into()))
+                .effects(Effects::BOLD),
+        )
 }
 
 /// Compact two-column reference for the value enums whose listings are hidden

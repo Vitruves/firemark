@@ -105,7 +105,8 @@ pub fn apply_anti_ai(base: &mut RgbaImage, color: [u8; 4], opacity: f32) {
         let this_strip_h = (lines.len() as i32 * line_height + padding * 2) as u32;
 
         // Small random Y jitter so text isn't pixel-perfect aligned
-        let jitter: i32 = rng.gen_range(-((h as f32 * 0.01) as i32).max(1)..=((h as f32 * 0.01) as i32).max(1));
+        let jitter: i32 =
+            rng.gen_range(-((h as f32 * 0.01) as i32).max(1)..=((h as f32 * 0.01) as i32).max(1));
         let y_pos = (band_y as i32 + jitter).clamp(0, h as i32 - this_strip_h as i32);
 
         for (i, line) in lines.iter().enumerate() {
@@ -142,7 +143,15 @@ pub fn apply_anti_ai(base: &mut RgbaImage, color: [u8; 4], opacity: f32) {
             if y_cursor + scatter_line_h > h as i32 {
                 break;
             }
-            draw_text_warped(base, &font, line, scatter_size, (padding, y_cursor), ink, &mut rng);
+            draw_text_warped(
+                base,
+                &font,
+                line,
+                scatter_size,
+                (padding, y_cursor),
+                ink,
+                &mut rng,
+            );
             y_cursor += scatter_line_h;
         }
         placed += 1;
@@ -182,9 +191,23 @@ fn homoglyph_mix(text: &str, font: &FontArc, rng: &mut impl Rng) -> String {
                 return c;
             }
             let sub = match c {
-                'A' => 'А', 'B' => 'В', 'C' => 'С', 'E' => 'Е', 'H' => 'Н', 'K' => 'К',
-                'M' => 'М', 'O' => 'О', 'P' => 'Р', 'T' => 'Т', 'X' => 'Х',
-                'a' => 'а', 'c' => 'с', 'e' => 'е', 'o' => 'о', 'p' => 'р', 'x' => 'х',
+                'A' => 'А',
+                'B' => 'В',
+                'C' => 'С',
+                'E' => 'Е',
+                'H' => 'Н',
+                'K' => 'К',
+                'M' => 'М',
+                'O' => 'О',
+                'P' => 'Р',
+                'T' => 'Т',
+                'X' => 'Х',
+                'a' => 'а',
+                'c' => 'с',
+                'e' => 'е',
+                'o' => 'о',
+                'p' => 'р',
+                'x' => 'х',
                 other => other,
             };
             if sub != c && font.glyph_id(sub).0 == 0 {
@@ -242,9 +265,9 @@ fn find_dense_regions(img: &RgbaImage, count: usize, strip_height: u32) -> Vec<u
         if selected.len() >= count {
             break;
         }
-        let overlaps = selected.iter().any(|&sy| {
-            (*y as i64 - sy as i64).unsigned_abs() < min_gap as u64
-        });
+        let overlaps = selected
+            .iter()
+            .any(|&sy| (*y as i64 - sy as i64).unsigned_abs() < min_gap as u64);
         if !overlaps {
             selected.push(*y as u32);
         }
@@ -320,10 +343,8 @@ fn draw_text_warped(
         let sy = ((baseline_y - glyph_size * 0.4) as i32).clamp(0, h - 1);
         let color = adaptive_ink(ink, luminance(img.get_pixel(sx as u32, sy as u32)));
 
-        let glyph = glyph_id.with_scale_and_position(
-            px_scale,
-            ab_glyph::point(cursor_x, baseline_y),
-        );
+        let glyph =
+            glyph_id.with_scale_and_position(px_scale, ab_glyph::point(cursor_x, baseline_y));
 
         if let Some(outlined) = font.outline_glyph(glyph) {
             let bb = outlined.px_bounds();

@@ -71,13 +71,7 @@ impl WatermarkRenderer for RibbonRenderer {
         // Random border thickness: 1-3px instead of fixed 2
         let border_thickness: u32 = rng.gen_range(1..=3);
         for i in 0..border_thickness {
-            ribbon.draw_line(
-                0,
-                i as i32,
-                ribbon_len as i32,
-                i as i32,
-                dark_rgba,
-            );
+            ribbon.draw_line(0, i as i32, ribbon_len as i32, i as i32, dark_rgba);
             ribbon.draw_line(
                 0,
                 (ribbon_band_h - 1 - i) as i32,
@@ -89,9 +83,9 @@ impl WatermarkRenderer for RibbonRenderer {
 
         // ── Center the text on the ribbon ──
         // Scale text to fit within the band height, not the full length
-        let text_scale = config.font_size.unwrap_or_else(|| {
-            (ribbon_band_h as f32 * 0.55).max(14.0)
-        });
+        let text_scale = config
+            .font_size
+            .unwrap_or_else(|| (ribbon_band_h as f32 * 0.55).max(14.0));
         let (tw, th) = measure_text(&bold_font, &main_text, text_scale);
         let tx = (ribbon_len as f32 - tw) / 2.0;
         let ty = (ribbon_band_h as f32 - th) / 2.0;
@@ -181,7 +175,10 @@ impl WatermarkRenderer for RibbonRenderer {
             let fold_bottom = vec![
                 (width as i32 - corner_span as i32, height as i32),
                 (width as i32 - corner_span as i32 + fold_size, height as i32),
-                (width as i32 - corner_span as i32 + fold_size, height as i32 - fold_size),
+                (
+                    width as i32 - corner_span as i32 + fold_size,
+                    height as i32 - fold_size,
+                ),
             ];
             canvas.fill_polygon(&fold_bottom, fold_rgba);
             let fold_right = vec![

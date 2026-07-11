@@ -6,8 +6,7 @@ use crate::error::{FiremarkError, Result};
 // Embedded Liberation fonts from the assets directory.
 static LIBERATION_SANS_REGULAR: &[u8] =
     include_bytes!("../../assets/fonts/LiberationSans-Regular.ttf");
-static LIBERATION_SANS_BOLD: &[u8] =
-    include_bytes!("../../assets/fonts/LiberationSans-Bold.ttf");
+static LIBERATION_SANS_BOLD: &[u8] = include_bytes!("../../assets/fonts/LiberationSans-Bold.ttf");
 static LIBERATION_MONO_REGULAR: &[u8] =
     include_bytes!("../../assets/fonts/LiberationMono-Regular.ttf");
 

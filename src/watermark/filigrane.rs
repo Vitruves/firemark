@@ -103,12 +103,15 @@ fn make_color(base: [u8; 4], opacity: f32) -> Rgba<u8> {
 
 fn draw_guilloche_bands(canvas: &mut Canvas, w: f32, h: f32, dim: f32, color: Rgba<u8>) {
     let mut rng = rand::thread_rng();
-    let num_bands = rng.gen_range(3..=8_usize).max(((h / dim) * 5.0).ceil() as usize);
+    let num_bands = rng
+        .gen_range(3..=8_usize)
+        .max(((h / dim) * 5.0).ceil() as usize);
     let base_spacing = h / (num_bands as f32 + 1.0);
 
     for band in 1..=num_bands {
         // Jitter band vertical position ±15%
-        let cy = band as f32 * base_spacing + rng.gen_range(-base_spacing * 0.15..base_spacing * 0.15);
+        let cy =
+            band as f32 * base_spacing + rng.gen_range(-base_spacing * 0.15..base_spacing * 0.15);
         let amplitude = base_spacing * rng.gen_range(0.14..0.24);
         // Heavily randomized frequencies per band
         let freq_fast = rng.gen_range(5.0..12.0) * PI / w;
@@ -259,13 +262,7 @@ fn draw_crosshatch(canvas: &mut Canvas, w: f32, h: f32, dim: f32, color: Rgba<u8
         let offset = i as f32 * spacing + phase2 + line_jitter;
         let x_start = w - offset;
         let x_end = x_start - h * (1.0 + angle_jitter.tan());
-        canvas.draw_line(
-            x_start as i32,
-            0,
-            x_end as i32,
-            h as i32,
-            color,
-        );
+        canvas.draw_line(x_start as i32, 0, x_end as i32, h as i32, color);
     }
 }
 
@@ -546,13 +543,7 @@ fn draw_plume(canvas: &mut Canvas, w: f32, h: f32, color: Rgba<u8>) {
 
 // ── Constellation — star nodes connected by fine web ────────────────────────
 
-fn draw_constellation(
-    canvas: &mut Canvas,
-    w: f32,
-    h: f32,
-    color: Rgba<u8>,
-    faint: Rgba<u8>,
-) {
+fn draw_constellation(canvas: &mut Canvas, w: f32, h: f32, color: Rgba<u8>, faint: Rgba<u8>) {
     let mut rng = rand::thread_rng();
     // Jittered grid with variable cell size for organic distribution.
     let base_cell = 110.0_f32;
@@ -574,7 +565,10 @@ fn draw_constellation(
     // Extra fully random nodes to break grid feel
     let extra = (nodes.len() as f32 * 0.15) as usize;
     for _ in 0..extra {
-        nodes.push((rng.gen_range(-50.0..w + 50.0), rng.gen_range(-50.0..h + 50.0)));
+        nodes.push((
+            rng.gen_range(-50.0..w + 50.0),
+            rng.gen_range(-50.0..h + 50.0),
+        ));
     }
 
     let max_dist = base_cell * 2.0;
@@ -584,6 +578,7 @@ fn draw_constellation(
         let (ax, ay) = nodes[i];
 
         let mut neighbours: Vec<(usize, f32)> = Vec::new();
+        #[allow(clippy::needless_range_loop)]
         for j in 0..nodes.len() {
             if i == j {
                 continue;
@@ -621,8 +616,8 @@ fn draw_constellation(
         let base_angle: f32 = rng.gen_range(0.0..2.0 * PI);
         // Irregular spacing between rays
         for r in 0..num_rays {
-            let angle = base_angle + r as f32 * 2.0 * PI / num_rays as f32
-                + rng.gen_range(-0.15..0.15);
+            let angle =
+                base_angle + r as f32 * 2.0 * PI / num_rays as f32 + rng.gen_range(-0.15..0.15);
             let this_len = ray_len * rng.gen_range(0.5..1.4);
             let ray_steps = 80_u32;
             for s in 0..ray_steps {
@@ -664,7 +659,10 @@ fn draw_ripple(canvas: &mut Canvas, w: f32, h: f32, color: Rgba<u8>) {
     // Scatter extra random origins
     let extra = rng.gen_range(4..10_usize);
     for _ in 0..extra {
-        origins.push((rng.gen_range(-100.0..w + 100.0), rng.gen_range(-100.0..h + 100.0)));
+        origins.push((
+            rng.gen_range(-100.0..w + 100.0),
+            rng.gen_range(-100.0..h + 100.0),
+        ));
     }
 
     for &(ox, oy) in &origins {
@@ -712,12 +710,10 @@ fn draw_ripple(canvas: &mut Canvas, w: f32, h: f32, color: Rgba<u8>) {
 
 fn draw_hexagon(canvas: &mut Canvas, cx: f32, cy: f32, r: f32, color: Rgba<u8>) {
     let mut pts = [(0i32, 0i32); 6];
+    #[allow(clippy::needless_range_loop)]
     for i in 0..6 {
         let angle = PI / 6.0 + i as f32 * PI / 3.0;
-        pts[i] = (
-            (cx + r * angle.cos()) as i32,
-            (cy + r * angle.sin()) as i32,
-        );
+        pts[i] = ((cx + r * angle.cos()) as i32, (cy + r * angle.sin()) as i32);
     }
     for i in 0..6 {
         let j = (i + 1) % 6;

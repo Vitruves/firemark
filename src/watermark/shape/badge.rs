@@ -87,12 +87,7 @@ impl WatermarkRenderer for BadgeRenderer {
         // Per-vertex jitter: ±1-2px
         let shield_points: Vec<(i32, i32)> = base_shield_points
             .iter()
-            .map(|&(px, py)| {
-                (
-                    px + rng.gen_range(-2..=2),
-                    py + rng.gen_range(-2..=2),
-                )
-            })
+            .map(|&(px, py)| (px + rng.gen_range(-2..=2), py + rng.gen_range(-2..=2)))
             .collect();
 
         // Fill the shield
@@ -148,9 +143,9 @@ impl WatermarkRenderer for BadgeRenderer {
         canvas.fill_star(cx, star_y, star_outer, star_inner, 5, white);
 
         // ── Main text (bold, large, centered in upper-middle area) ──
-        let main_scale = config.font_size.unwrap_or_else(|| {
-            auto_scale(&main_text, shield_w as u32, 0.70, &bold_font)
-        });
+        let main_scale = config
+            .font_size
+            .unwrap_or_else(|| auto_scale(&main_text, shield_w as u32, 0.70, &bold_font));
         let (mtw, mth) = measure_text(&bold_font, &main_text, main_scale);
         // Position main text in the center of the shield, slightly above vertical midpoint
         let text_y = cy as f32 - mth * 0.3;

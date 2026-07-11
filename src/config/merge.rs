@@ -612,9 +612,7 @@ fn save_preset(args: &CliArgs, preset_name: &str) -> Result<()> {
 
     // Build a PresetConfig from the current CLI args
     let preset = preset_from_cli(args);
-    toml_config
-        .preset
-        .insert(preset_name.to_string(), preset);
+    toml_config.preset.insert(preset_name.to_string(), preset);
 
     // Ensure parent directory exists
     if let Some(parent) = config_path.parent() {
@@ -622,8 +620,8 @@ fn save_preset(args: &CliArgs, preset_name: &str) -> Result<()> {
             .with_context(|| format!("Failed to create config directory: {}", parent.display()))?;
     }
 
-    let serialized = toml::to_string_pretty(&toml_config)
-        .context("Failed to serialize config to TOML")?;
+    let serialized =
+        toml::to_string_pretty(&toml_config).context("Failed to serialize config to TOML")?;
     std::fs::write(&config_path, serialized)
         .with_context(|| format!("Failed to write config file: {}", config_path.display()))?;
 
@@ -659,9 +657,10 @@ fn preset_from_cli(args: &CliArgs) -> PresetConfig {
         tile_spacing: args.tile_spacing,
         tile_rows: args.tile_rows,
         tile_cols: args.tile_cols,
-        offset: args.offset.as_ref().and_then(|s| {
-            parse_offset(s).ok().map(|(x, y)| [x, y])
-        }),
+        offset: args
+            .offset
+            .as_ref()
+            .and_then(|s| parse_offset(s).ok().map(|(x, y)| [x, y])),
         color: args.color.clone(),
         opacity: args.opacity,
         background: args.background,
@@ -674,9 +673,10 @@ fn preset_from_cli(args: &CliArgs) -> PresetConfig {
         border_style: args.border_style,
         shadow: if args.shadow { Some(true) } else { None },
         shadow_color: args.shadow_color.clone(),
-        shadow_offset: args.shadow_offset.as_ref().and_then(|s| {
-            parse_offset(s).ok().map(|(x, y)| [x, y])
-        }),
+        shadow_offset: args
+            .shadow_offset
+            .as_ref()
+            .and_then(|s| parse_offset(s).ok().map(|(x, y)| [x, y])),
         shadow_blur: args.shadow_blur,
         shadow_opacity: args.shadow_opacity,
         invert: if args.invert { Some(true) } else { None },
@@ -687,11 +687,19 @@ fn preset_from_cli(args: &CliArgs) -> PresetConfig {
         skip_pages: args.skip_pages.clone(),
         layer_name: args.layer_name.clone(),
         flatten: if args.no_flatten { Some(false) } else { None },
-        copy_poison: if args.no_copy_poison { Some(false) } else { None },
+        copy_poison: if args.no_copy_poison {
+            Some(false)
+        } else {
+            None
+        },
         behind: if args.behind { Some(true) } else { None },
         quality: args.quality,
         dpi: args.dpi,
-        strip_metadata: if args.strip_metadata { Some(true) } else { None },
+        strip_metadata: if args.strip_metadata {
+            Some(true)
+        } else {
+            None
+        },
         png_compression: args.png_compression,
         color_profile: args.color_profile.clone(),
     }

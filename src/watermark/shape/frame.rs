@@ -173,30 +173,28 @@ impl WatermarkRenderer for FrameRenderer {
         // Random corner ornament size: ±2px
         let corner_size = (inner_gap as f32 * 0.5).ceil() as i32 + rng.gen_range(-2..=2);
         let corners = [
-            (outer_x + outer_thickness as i32 / 2, outer_y + outer_thickness as i32 / 2),
-            (outer_x + outer_w - outer_thickness as i32 / 2, outer_y + outer_thickness as i32 / 2),
-            (outer_x + outer_thickness as i32 / 2, outer_y + outer_h - outer_thickness as i32 / 2),
-            (outer_x + outer_w - outer_thickness as i32 / 2, outer_y + outer_h - outer_thickness as i32 / 2),
+            (
+                outer_x + outer_thickness as i32 / 2,
+                outer_y + outer_thickness as i32 / 2,
+            ),
+            (
+                outer_x + outer_w - outer_thickness as i32 / 2,
+                outer_y + outer_thickness as i32 / 2,
+            ),
+            (
+                outer_x + outer_thickness as i32 / 2,
+                outer_y + outer_h - outer_thickness as i32 / 2,
+            ),
+            (
+                outer_x + outer_w - outer_thickness as i32 / 2,
+                outer_y + outer_h - outer_thickness as i32 / 2,
+            ),
         ];
 
         for &(ccx, ccy) in &corners {
             // Draw a small ornamental cross (+) at each corner
-            canvas.draw_thick_line(
-                ccx - corner_size,
-                ccy,
-                ccx + corner_size,
-                ccy,
-                2,
-                rgba,
-            );
-            canvas.draw_thick_line(
-                ccx,
-                ccy - corner_size,
-                ccx,
-                ccy + corner_size,
-                2,
-                rgba,
-            );
+            canvas.draw_thick_line(ccx - corner_size, ccy, ccx + corner_size, ccy, 2, rgba);
+            canvas.draw_thick_line(ccx, ccy - corner_size, ccx, ccy + corner_size, 2, rgba);
             // Small filled square at the center of each cross
             let sq = (corner_size / 3).max(2);
             canvas.fill_rect(
@@ -279,7 +277,11 @@ impl WatermarkRenderer for FrameRenderer {
 
                 let h_gap = 40.0_f32;
                 let main_cell_w = main_tw + h_gap;
-                let sec_cell_w = if has_secondary { sec_tw + h_gap } else { main_cell_w };
+                let sec_cell_w = if has_secondary {
+                    sec_tw + h_gap
+                } else {
+                    main_cell_w
+                };
                 let row_h = main_th + h_gap * 0.5;
 
                 if main_cell_w > 0.0 && row_h > 0.0 {

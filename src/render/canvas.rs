@@ -48,8 +48,7 @@ impl Canvas {
             return;
         }
         for i in 0..3 {
-            let blended =
-                (color[i] as f32 * sa + dst[i] as f32 * da * (1.0 - sa)) / out_a;
+            let blended = (color[i] as f32 * sa + dst[i] as f32 * da * (1.0 - sa)) / out_a;
             dst[i] = blended.clamp(0.0, 255.0) as u8;
         }
         dst[3] = (out_a * 255.0).clamp(0.0, 255.0) as u8;
@@ -92,7 +91,15 @@ impl Canvas {
         color: Rgba<u8>,
     ) {
         let px_scale = ab_glyph::PxScale::from(scale);
-        drawing::draw_text_mut(&mut self.img, color, x as i32, y as i32, px_scale, font, text);
+        drawing::draw_text_mut(
+            &mut self.img,
+            color,
+            x as i32,
+            y as i32,
+            px_scale,
+            font,
+            text,
+        );
     }
 
     /// Draw a line between two points.
@@ -138,6 +145,7 @@ impl Canvas {
     }
 
     /// Draw a dashed line.
+    #[allow(clippy::too_many_arguments)]
     pub fn draw_dashed_line(
         &mut self,
         x1: i32,
@@ -299,6 +307,7 @@ impl Canvas {
     }
 
     /// Draw text along a circular arc. Characters are placed individually, rotated tangent to the circle.
+    #[allow(clippy::too_many_arguments)]
     pub fn draw_text_on_arc(
         &mut self,
         font: &FontArc,

@@ -49,7 +49,12 @@ impl SaliencyMap {
             *s = (*s / p95).min(1.0);
         }
 
-        Self { block, cols, rows, scores }
+        Self {
+            block,
+            cols,
+            rows,
+            scores,
+        }
     }
 
     /// Saliency in [0, 1] at pixel coordinates; out-of-bounds returns 0.
@@ -77,7 +82,11 @@ impl SaliencyMap {
             }
             sy += step;
         }
-        if n == 0 { 0.0 } else { sum / n as f32 }
+        if n == 0 {
+            0.0
+        } else {
+            sum / n as f32
+        }
     }
 }
 
@@ -115,8 +124,16 @@ pub fn smooth_density(density: &[f64], kernel: usize) -> Vec<f64> {
     let mut smoothed = vec![0.0f64; n];
     let mut running_sum: f64 = density[..kernel.min(n)].iter().sum();
     for i in 0..n {
-        let add = if i + kernel < n { density[i + kernel] } else { 0.0 };
-        let sub = if i >= kernel { density[i - kernel] } else { 0.0 };
+        let add = if i + kernel < n {
+            density[i + kernel]
+        } else {
+            0.0
+        };
+        let sub = if i >= kernel {
+            density[i - kernel]
+        } else {
+            0.0
+        };
         running_sum += add - sub;
         smoothed[i] = running_sum;
     }

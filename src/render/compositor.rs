@@ -71,12 +71,7 @@ pub fn composite(
 }
 
 /// Composite `overlay` centered on `base` with the given opacity and blend mode.
-pub fn composite_centered(
-    base: &mut Canvas,
-    overlay: &Canvas,
-    opacity: f32,
-    mode: BlendMode,
-) {
+pub fn composite_centered(base: &mut Canvas, overlay: &Canvas, opacity: f32, mode: BlendMode) {
     let x = (base.width() as i32 - overlay.width() as i32) / 2;
     let y = (base.height() as i32 - overlay.height() as i32) / 2;
     composite(base, overlay, x, y, opacity, mode);

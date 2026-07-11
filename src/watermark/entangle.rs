@@ -31,7 +31,15 @@ pub fn entangle_strokes(base: &mut RgbaImage, color: [u8; 4], opacity: f32) {
     for y_band in bands {
         let angle = rng.gen_range(-1.5f32..1.5).to_radians();
         let amp = (h as f32 * 0.004).clamp(1.5, 6.0);
-        draw_wavy_stroke(base, &mut rng, ink, (0.0, y_band as f32), angle, w as f32 * 1.05, amp);
+        draw_wavy_stroke(
+            base,
+            &mut rng,
+            ink,
+            (0.0, y_band as f32),
+            angle,
+            w as f32 * 1.05,
+            amp,
+        );
     }
 
     // ── Diagonal strokes through salient regions ──
@@ -48,7 +56,12 @@ pub fn entangle_strokes(base: &mut RgbaImage, color: [u8; 4], opacity: f32) {
             continue;
         }
         let base_angle = rng.gen_range(20.0f32..70.0);
-        let angle = if rng.gen::<bool>() { base_angle } else { 180.0 - base_angle }.to_radians();
+        let angle = if rng.gen::<bool>() {
+            base_angle
+        } else {
+            180.0 - base_angle
+        }
+        .to_radians();
         let length = dim * rng.gen_range(0.6..1.2);
         let start = (
             px as f32 - angle.cos() * length / 2.0,
@@ -63,14 +76,21 @@ pub fn entangle_strokes(base: &mut RgbaImage, color: [u8; 4], opacity: f32) {
 /// Indices of the `count` highest-density rows, at least `min_gap` apart.
 fn top_bands(density: &[f64], count: usize, min_gap: usize) -> Vec<usize> {
     let mut idx: Vec<usize> = (0..density.len()).collect();
-    idx.sort_by(|&a, &b| density[b].partial_cmp(&density[a]).unwrap_or(std::cmp::Ordering::Equal));
+    idx.sort_by(|&a, &b| {
+        density[b]
+            .partial_cmp(&density[a])
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     let mut out: Vec<usize> = Vec::with_capacity(count);
     for i in idx {
         if out.len() >= count {
             break;
         }
-        if out.iter().all(|&s| (s as i64 - i as i64).unsigned_abs() as usize >= min_gap) {
+        if out
+            .iter()
+            .all(|&s| (s as i64 - i as i64).unsigned_abs() as usize >= min_gap)
+        {
             out.push(i);
         }
     }
@@ -134,7 +154,9 @@ fn plot_soft(img: &mut RgbaImage, x: f32, y: f32, ink: [u8; 4]) {
             (color[0] as f32 * a + bg.0[0] as f32 * inv).round() as u8,
             (color[1] as f32 * a + bg.0[1] as f32 * inv).round() as u8,
             (color[2] as f32 * a + bg.0[2] as f32 * inv).round() as u8,
-            (bg.0[3] as f32 + ink[3] as f32 * weight * inv).min(255.0).round() as u8,
+            (bg.0[3] as f32 + ink[3] as f32 * weight * inv)
+                .min(255.0)
+                .round() as u8,
         ]);
         img.put_pixel(px as u32, py as u32, blended);
     }

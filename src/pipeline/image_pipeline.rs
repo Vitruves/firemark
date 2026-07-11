@@ -15,24 +15,21 @@ use rand::Rng;
 use crate::cli::args::{BlendMode, CliArgs, Position};
 use crate::config::types::WatermarkConfig;
 use crate::pipeline::io::{detect_format, resolve_output_path, FileFormat};
-use crate::template::TemplateContext;
 use crate::render::canvas::Canvas;
 use crate::render::color::{to_rgba, with_opacity};
 use crate::render::compositor::{get_blend_fn, BlendFn};
 use crate::render::qr::generate_qr;
 use crate::render::saliency::SaliencyMap;
 use crate::render::transform::{rotate_canvas, scale_canvas};
+use crate::template::TemplateContext;
 use crate::watermark::create_renderer;
 use crate::watermark::filigrane::render_filigrane;
 
 /// Process a single image file (JPEG or PNG), applying the configured watermark.
 pub fn process_image(config: &WatermarkConfig, _args: &CliArgs) -> anyhow::Result<()> {
     let input = &config.input;
-    let output_path = resolve_output_path(
-        input,
-        config.output.as_deref(),
-        config.suffix.as_deref(),
-    );
+    let output_path =
+        resolve_output_path(input, config.output.as_deref(), config.suffix.as_deref());
 
     if config.dry_run {
         info!(
@@ -79,12 +76,19 @@ pub fn process_image(config: &WatermarkConfig, _args: &CliArgs) -> anyhow::Resul
 
     // 4c. Overlay QR code if --qr-data was provided.
     if let Some(ref qr_data) = config.qr_data {
-        let qr_size = config.qr_code_size
+        let qr_size = config
+            .qr_code_size
             .unwrap_or_else(|| (width.min(height) as f32 * config.scale * 0.5).max(60.0) as u32);
         let color = to_rgba(with_opacity(config.color, config.opacity));
-        let qr = generate_qr(qr_data, qr_size, color)
-            .context("QR code generation failed")?;
-        let (qx, qy) = qr_position(width, height, qr.width(), qr.height(), config.qr_code_position, config.margin);
+        let qr = generate_qr(qr_data, qr_size, color).context("QR code generation failed")?;
+        let (qx, qy) = qr_position(
+            width,
+            height,
+            qr.width(),
+            qr.height(),
+            config.qr_code_position,
+            config.margin,
+        );
         wm_canvas.blit(&qr, qx, qy);
     }
 
@@ -262,7 +266,11 @@ impl ModulationFields {
             let wavelength = dim * rng.gen_range(0.3..1.0);
             let dir: f32 = rng.gen_range(0.0..std::f32::consts::TAU);
             let f = std::f32::consts::TAU / wavelength;
-            (f * dir.cos(), f * dir.sin(), rng.gen_range(0.0..std::f32::consts::TAU))
+            (
+                f * dir.cos(),
+                f * dir.sin(),
+                rng.gen_range(0.0..std::f32::consts::TAU),
+            )
         };
         Self {
             color: [field(rng), field(rng)],
@@ -336,7 +344,9 @@ fn blend_entangled(
             for (ch, o) in out.iter_mut().take(3).enumerate() {
                 let entangled = entangle_fn(bg.0[ch], fg.0[ch]) as f32;
                 let ink = fg.0[ch] as f32 * mix_t + entangled * (1.0 - mix_t);
-                *o = (ink * alpha + bg.0[ch] as f32 * inv).round().clamp(0.0, 255.0) as u8;
+                *o = (ink * alpha + bg.0[ch] as f32 * inv)
+                    .round()
+                    .clamp(0.0, 255.0) as u8;
             }
             out[3] = (bg.0[3] as f32 + fg.0[3] as f32 * inv).min(255.0).round() as u8;
             base.put_pixel(x as u32, y as u32, Rgba(out));

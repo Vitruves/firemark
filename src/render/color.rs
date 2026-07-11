@@ -23,8 +23,8 @@ pub fn invert_color(color: [u8; 4]) -> [u8; 4] {
 
 /// Convert to perceptual grayscale (ITU-R BT.601), keeping alpha unchanged.
 pub fn to_grayscale(color: [u8; 4]) -> [u8; 4] {
-    let gray = (0.299 * color[0] as f32 + 0.587 * color[1] as f32 + 0.114 * color[2] as f32)
-        .round() as u8;
+    let gray =
+        (0.299 * color[0] as f32 + 0.587 * color[1] as f32 + 0.114 * color[2] as f32).round() as u8;
     [gray, gray, gray, color[3]]
 }
 

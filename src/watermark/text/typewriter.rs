@@ -29,9 +29,9 @@ impl WatermarkRenderer for TypewriterRenderer {
         let font = load_font(Some(font_name), config.font_weight)?;
 
         // Use a moderate size so many lines fit on the page.
-        let scale = config.font_size.unwrap_or_else(|| {
-            (height as f32 * 0.025).clamp(12.0, 28.0)
-        });
+        let scale = config
+            .font_size
+            .unwrap_or_else(|| (height as f32 * 0.025).clamp(12.0, 28.0));
         let sec_scale = scale * 0.7;
 
         let base_color = with_opacity(config.color, config.opacity);

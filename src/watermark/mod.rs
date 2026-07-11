@@ -9,12 +9,13 @@ pub mod renderer;
 pub mod shape;
 pub mod text;
 
-
 pub use renderer::WatermarkRenderer;
 
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum WatermarkType {
     /// Full-page repeating diagonal text grid

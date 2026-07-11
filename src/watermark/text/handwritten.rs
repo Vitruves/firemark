@@ -28,9 +28,9 @@ impl WatermarkRenderer for HandwrittenRenderer {
 
         // Scale to 30-40% of canvas width.
         let target_ratio = config.scale.clamp(0.25, 0.50);
-        let scale = config.font_size.unwrap_or_else(|| {
-            auto_scale(&text, width, target_ratio, &font)
-        });
+        let scale = config
+            .font_size
+            .unwrap_or_else(|| auto_scale(&text, width, target_ratio, &font));
 
         let (tw, th) = measure_text(&font, &text, scale);
         let color = with_opacity(config.color, config.opacity);

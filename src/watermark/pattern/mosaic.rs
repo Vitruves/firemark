@@ -29,7 +29,9 @@ impl WatermarkRenderer for MosaicRenderer {
 
         let spacing = config.tile_spacing.max(30) as f32;
         let scale = config.font_size.unwrap_or_else(|| {
-            auto_scale(&text, spacing as u32, 0.65, &font).max(10.0).min(spacing * 0.85)
+            auto_scale(&text, spacing as u32, 0.65, &font)
+                .max(10.0)
+                .min(spacing * 0.85)
         });
         let sec_scale = scale * 0.55;
 
@@ -76,8 +78,16 @@ impl WatermarkRenderer for MosaicRenderer {
         let tile_h = th.ceil() as u32 + pad * 2;
 
         // Pad for secondary tile canvases (room for rotation).
-        let sec_tile_w = if has_secondary { stw.ceil() as u32 + pad * 2 } else { tile_w };
-        let sec_tile_h = if has_secondary { sth.ceil() as u32 + pad * 2 } else { tile_h };
+        let sec_tile_w = if has_secondary {
+            stw.ceil() as u32 + pad * 2
+        } else {
+            tile_w
+        };
+        let sec_tile_h = if has_secondary {
+            sth.ceil() as u32 + pad * 2
+        } else {
+            tile_h
+        };
 
         for row in -1..rows {
             // Alternate between main and secondary text on odd rows.
@@ -138,11 +148,7 @@ impl WatermarkRenderer for MosaicRenderer {
             for dx in 0..width {
                 let sx = ox + dx as i32;
                 let sy = oy + dy as i32;
-                if sx >= 0
-                    && sy >= 0
-                    && (sx as u32) < work.width()
-                    && (sy as u32) < work.height()
-                {
+                if sx >= 0 && sy >= 0 && (sx as u32) < work.width() && (sy as u32) < work.height() {
                     let px = *src.get_pixel(sx as u32, sy as u32);
                     if px[3] > 0 {
                         canvas.blend_pixel(dx as i32, dy as i32, px);

@@ -36,9 +36,9 @@ impl WatermarkRenderer for RedactedRenderer {
         let margin = config.margin.max(8);
 
         // Font size — moderate so text fits comfortably inside the bars.
-        let scale = config.font_size.unwrap_or_else(|| {
-            (height as f32 * 0.028).clamp(14.0, 36.0)
-        });
+        let scale = config
+            .font_size
+            .unwrap_or_else(|| (height as f32 * 0.028).clamp(14.0, 36.0));
         let sec_scale = scale * 0.7;
 
         let (tw, th) = measure_text(&font, &text, scale);
@@ -119,19 +119,12 @@ impl WatermarkRenderer for RedactedRenderer {
                 }
 
                 let rotated = rotate_canvas(&mini, tilt);
-                let blit_x =
-                    bar_x_start - (rotated.width() as i32 - bar_width as i32) / 2;
+                let blit_x = bar_x_start - (rotated.width() as i32 - bar_width as i32) / 2;
                 let blit_y = bar_y - (rotated.height() as i32 - bar_h.ceil() as i32) / 2;
                 canvas.blit(&rotated, blit_x, blit_y);
             } else {
                 // Draw straight bar directly on the output canvas.
-                canvas.fill_rect(
-                    bar_x_start,
-                    bar_y,
-                    bar_width,
-                    bar_h.ceil() as u32,
-                    bar_rgba,
-                );
+                canvas.fill_rect(bar_x_start, bar_y, bar_width, bar_h.ceil() as u32, bar_rgba);
 
                 // Repeat text across the bar with random gap.
                 let text_gap = bar_tw * rng.gen_range(0.4..0.8);

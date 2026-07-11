@@ -1,4 +1,3 @@
-
 /// Parse a color string (hex #RRGGBB, #RRGGBBAA, or named CSS color)
 pub fn parse_color(s: &str) -> Result<[u8; 4], String> {
     let color = csscolorparser::parse(s).map_err(|e| format!("Invalid color '{s}': {e}"))?;
@@ -68,8 +67,9 @@ pub fn parse_page_range(s: &str) -> Result<PageRange, String> {
     Ok(PageRange::Pages(pages))
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum PageRange {
+    #[default]
     All,
     Pages(Vec<u32>),
 }
@@ -80,11 +80,5 @@ impl PageRange {
             PageRange::All => true,
             PageRange::Pages(pages) => pages.contains(&page),
         }
-    }
-}
-
-impl Default for PageRange {
-    fn default() -> Self {
-        PageRange::All
     }
 }

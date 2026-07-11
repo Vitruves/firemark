@@ -32,7 +32,9 @@ impl WatermarkRenderer for GhostRenderer {
 
         let spacing = config.tile_spacing.max(30) as f32;
         let scale = config.font_size.unwrap_or_else(|| {
-            auto_scale(&text, spacing as u32, 0.65, &font).max(10.0).min(spacing * 0.85)
+            auto_scale(&text, spacing as u32, 0.65, &font)
+                .max(10.0)
+                .min(spacing * 0.85)
         });
         let sec_scale = scale * 0.55;
 
@@ -100,17 +102,32 @@ impl WatermarkRenderer for GhostRenderer {
                 let y = row as f32 * cell_h + (cell_h - draw_th) / 2.0;
 
                 // Per-cell opacity jitter: ±0.02 around ghost_opacity
-                let cell_opacity = (ghost_opacity + rng.gen_range(-0.02_f32..0.02)).clamp(0.01, 0.20);
+                let cell_opacity =
+                    (ghost_opacity + rng.gen_range(-0.02_f32..0.02)).clamp(0.01, 0.20);
                 let cell_hi = with_opacity([hi_r, hi_g, hi_b, 255], cell_opacity);
                 let cell_hi_rgba = to_rgba(cell_hi);
                 let cell_sh = with_opacity([sh_r, sh_g, sh_b, 255], cell_opacity);
                 let cell_sh_rgba = to_rgba(cell_sh);
 
                 // 1. Highlight pass -- randomized direction.
-                work.draw_text(&font, draw_text, x + hi_dx, y + hi_dy, draw_scale, cell_hi_rgba);
+                work.draw_text(
+                    &font,
+                    draw_text,
+                    x + hi_dx,
+                    y + hi_dy,
+                    draw_scale,
+                    cell_hi_rgba,
+                );
 
                 // 2. Shadow pass -- randomized direction.
-                work.draw_text(&font, draw_text, x + sh_dx, y + sh_dy, draw_scale, cell_sh_rgba);
+                work.draw_text(
+                    &font,
+                    draw_text,
+                    x + sh_dx,
+                    y + sh_dy,
+                    draw_scale,
+                    cell_sh_rgba,
+                );
             }
         }
 

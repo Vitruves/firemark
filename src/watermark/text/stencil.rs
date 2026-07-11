@@ -234,6 +234,7 @@ impl WatermarkRenderer for StencilRenderer {
 /// Because the canvas is transparent to start, we take a simpler approach:
 /// draw the text multiple times with 1-2 px offsets in all 8 compass
 /// directions to build up the outline.
+#[allow(clippy::too_many_arguments)]
 fn draw_stencil_line(
     canvas: &mut Canvas,
     font: &ab_glyph::FontArc,
