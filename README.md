@@ -64,6 +64,14 @@ processing for entire folders.
 
 ## Install
 
+Pre-built binary (Linux & macOS, x86_64 & arm64) — downloads the latest release into `~/.local/bin`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Vitruves/firemark/main/install.sh | sh
+```
+
+Windows binaries are attached to each [release](https://github.com/Vitruves/firemark/releases).
+
 From [crates.io](https://crates.io/crates/firemark):
 
 ```bash

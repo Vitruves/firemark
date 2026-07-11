@@ -1,41 +1,38 @@
 use std::time::Duration;
 
-use log::info;
-
 const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
-const CRATES_IO_API: &str = "https://crates.io/api/v1/crates/firemark";
+const GITHUB_RELEASES_API: &str = "https://api.github.com/repos/Vitruves/firemark/releases/latest";
+const INSTALL_CMD: &str =
+    "curl -fsSL https://raw.githubusercontent.com/Vitruves/firemark/main/install.sh | sh";
 
-/// Check crates.io for a newer version. Silently returns on any failure
-/// (no internet, timeout, parse error) so it never blocks the user.
+/// Check GitHub Releases for a newer version and print a short notice to
+/// stderr if one exists. Silently returns on any failure (offline, timeout,
+/// parse error) so it never blocks or annoys the user.
 pub fn check_for_update() {
-    // Spawn in a best-effort fashion — 2 second timeout max.
     let result = std::panic::catch_unwind(try_check);
     if let Ok(Some(latest)) = result {
         if is_newer(&latest, CURRENT_VERSION) {
-            info!(
-                "Update available: {CRATE_NAME} v{latest} (you have v{CURRENT_VERSION}). \
-                 Run `cargo install {CRATE_NAME}` to update."
+            eprintln!(
+                "\n  {CRATE_NAME} v{latest} is available (you have v{CURRENT_VERSION}).\n  \
+                 Update:  {INSTALL_CMD}\n"
             );
         }
     }
 }
 
 fn try_check() -> Option<String> {
-    let resp = ureq::get(CRATES_IO_API)
+    let resp = ureq::get(GITHUB_RELEASES_API)
         .set("User-Agent", &format!("{CRATE_NAME}/{CURRENT_VERSION}"))
+        .set("Accept", "application/vnd.github+json")
         .timeout(Duration::from_secs(2))
         .call()
         .ok()?;
 
     let body: serde_json::Value = resp.into_json().ok()?;
-    let latest = body
-        .get("crate")?
-        .get("max_stable_version")?
-        .as_str()?
-        .to_string();
-
-    Some(latest)
+    let tag = body.get("tag_name")?.as_str()?;
+    // Release tags are of the form `v0.1.4`; strip the leading `v`.
+    Some(tag.trim_start_matches('v').to_string())
 }
 
 /// Simple semver comparison: returns true if `latest` > `current`.
